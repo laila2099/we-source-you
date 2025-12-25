@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "477012196994",
+    "project_id": "we-source-you",
+    "storage_bucket": "we-source-you.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:477012196994:android:3182d6ceccfcb8eebb7e9b",
+        "android_client_info": {
+          "package_name": "com.example.we_source_you"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAM7BI09qfrZfcJBwr5XJdi_FthajLhP28"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
