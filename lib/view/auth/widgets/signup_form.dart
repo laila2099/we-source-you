@@ -1,232 +1,3 @@
-// // signup_form.dart
-
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:get/get.dart';
-// import 'package:we_source_you/core/constant/app_color.dart';
-// import 'package:we_source_you/core/constant/text_style.dart';
-// import 'package:we_source_you/core/constant/responsive_layout.dart';
-// import 'package:we_source_you/view/auth/sign_up/sign_up_controller/sign_up_controller.dart';
-// import 'package:we_source_you/view/auth/widgets/drop_down.dart';
-// import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
-// import 'package:we_source_you/widgets/custom_text_form/custom_text_form.dart';
-
-// class SignUpForm extends GetView<SignUpController> {
-//   const SignUpForm({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-
-//     return SingleChildScrollView(
-//       padding: ResponsiveLayout.screenPadding(context),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: <Widget>[
-//           // Back Home Button
-//           IconButton(
-//             iconSize: 18,
-//             color: theme.textTheme.bodySmall?.color,
-//             onPressed: controller.goBack,
-//             icon: const Icon(Icons.arrow_back),
-//           ),
-//           SizedBox(height: 30.h),
-
-//           // Logo / Brand
-//           Text(
-//             'WeSourceYou',
-//             style: AppTextStyles.h1().copyWith(
-//               color: theme.textTheme.headlineLarge?.color,
-//             ),
-//           ),
-//           SizedBox(height: 5.h),
-//           Text(
-//             'Media Talent',
-//             style: AppTextStyles.body().copyWith(color: Colors.grey),
-//           ),
-//           SizedBox(height: 20.h),
-
-//           // Create Your Account Header
-//           Text(
-//             'Create Your Account',
-//             style: AppTextStyles.h2().copyWith(
-//               color: theme.textTheme.headlineMedium?.color,
-//             ),
-//           ),
-//           SizedBox(height: 10.h),
-//           Text(
-//             'Join thousands of media professionals and companies worldwide',
-//             style: AppTextStyles.body().copyWith(color: Colors.grey),
-//           ),
-//           SizedBox(height: 30.h),
-
-//           // Continue with Google Button
-//           OutlinedButton.icon(
-//             onPressed: () {},
-//             icon: Text('G', style: AppTextStyles.bodyBold()),
-//             label: Text('Continue with Google', style: AppTextStyles.body()),
-//             style: OutlinedButton.styleFrom(
-//               minimumSize: Size(double.infinity, 50.h),
-//               foregroundColor: Colors.black,
-//               shape: RoundedRectangleBorder(
-//                 borderRadius: BorderRadius.circular(4.r),
-//               ),
-//             ),
-//           ),
-//           SizedBox(height: 20.h),
-
-//           // OR Separator
-//           Row(
-//             children: <Widget>[
-//               const Expanded(child: Divider(color: Colors.grey)),
-//               Padding(
-//                 padding: EdgeInsets.symmetric(horizontal: 10.w),
-//                 child: Text(
-//                   'or',
-//                   style: AppTextStyles.body().copyWith(
-//                     color: Colors.grey.shade600,
-//                   ),
-//                 ),
-//               ),
-//               const Expanded(child: Divider(color: Colors.grey)),
-//             ],
-//           ),
-//           SizedBox(height: 20.h),
-
-//           // First Name & Last Name
-//           Row(
-//             children: [
-//               Expanded(
-//                 child: CustomTextField(
-//                   labelText: 'First Name',
-//                   onChanged: (value) => controller.firstName.value = value,
-//                 ),
-//               ),
-//               SizedBox(width: 20.w),
-//               Expanded(
-//                 child: CustomTextField(
-//                   labelText: 'Last Name',
-//                   onChanged: (value) => controller.lastName.value = value,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           SizedBox(height: 20.h),
-
-//           // Email
-//           CustomTextField(
-//             labelText: 'Email Address',
-//             keyboardType: TextInputType.emailAddress,
-//             onChanged: (value) => controller.email.value = value,
-//           ),
-//           SizedBox(height: 20.h),
-
-//           // Country
-//           const CountryDropdownField(),
-//           SizedBox(height: 20.h),
-
-//           // Phone Number
-//           CustomTextField(
-//             labelText: 'Phone Number',
-//             isOptional: true,
-//             keyboardType: TextInputType.phone,
-//             onChanged: (value) => controller.phone.value = value,
-//             prefix: Text('+1 (555) 123-4567', style: AppTextStyles.body()),
-//           ),
-//           SizedBox(height: 20.h),
-
-//           // City
-//           CustomTextField(
-//             labelText: 'City',
-//             isOptional: true,
-//             onChanged: (value) => controller.city.value = value,
-//           ),
-//           SizedBox(height: 20.h),
-
-//           // Password
-//           CustomTextField(
-//             labelText: 'Password',
-//             isPassword: true,
-//             onChanged: (value) => controller.password.value = value,
-//           ),
-//           SizedBox(height: 20.h),
-
-//           // Terms & Privacy Checkbox
-//           Obx(
-//             () => Row(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Checkbox(
-//                   value: controller.agreedToTerms.value,
-//                   onChanged: controller.setAgreedToTerms,
-//                   activeColor: AppColors.darkBlue,
-//                 ),
-//                 Expanded(
-//                   child: Padding(
-//                     padding: EdgeInsets.only(top: 10.h),
-//                     child: RichText(
-//                       text: TextSpan(
-//                         text: 'I agree to the ',
-//                         style: AppTextStyles.body().copyWith(
-//                           color: Colors.black54,
-//                         ),
-//                         children: <TextSpan>[
-//                           TextSpan(
-//                             text: 'Terms of Service',
-//                             style: AppTextStyles.bodyBold().copyWith(
-//                               color: AppColors.darkBlue,
-//                             ),
-//                           ),
-//                           const TextSpan(text: ' and '),
-//                           TextSpan(
-//                             text: 'Privacy Policy',
-//                             style: AppTextStyles.bodyBold().copyWith(
-//                               color: AppColors.darkBlue,
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//           SizedBox(height: 30.h),
-
-//           // Create Account Button
-//           Center(
-//             child: WebHoverButton(
-//               text: "Create Account",
-//               onPressed: controller.createAccount,
-//               width: 300.w,
-//             ),
-//           ),
-//           SizedBox(height: 30.h),
-
-//           // Already have an account?
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.center,
-//             children: [
-//               Text("Already have an account? ", style: AppTextStyles.body()),
-//               TextButton(
-//                 onPressed: controller.gosignIn,
-//                 child: Text(
-//                   'Sign In',
-//                   style: AppTextStyles.bodyBold().copyWith(
-//                     color: AppColors.darkBlue,
-//                   ),
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-// signup_form.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -235,6 +6,7 @@ import 'package:we_source_you/core/constant/text_style.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/view/auth/sign_up/sign_up_controller/sign_up_controller.dart';
 import 'package:we_source_you/view/auth/widgets/drop_down.dart';
+import 'package:we_source_you/view/auth/widgets/google_sign.dart';
 import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
 import 'package:we_source_you/widgets/custom_text_form/custom_text_form.dart';
 
@@ -263,38 +35,42 @@ class SignUpForm extends GetView<SignUpController> {
             /// Brand
             Text(
               'WeSourceYou',
-              style: AppTextStyles.h1().copyWith(
-                color: theme.textTheme.headlineLarge?.color,
-              ),
+              style: AppTextStyles.h1(
+                context,
+              ).copyWith(color: theme.textTheme.headlineLarge?.color),
             ),
             SizedBox(height: 5.h),
             Text(
               'Media Talent',
-              style: AppTextStyles.body().copyWith(color: Colors.grey),
+              style: AppTextStyles.body(context).copyWith(color: Colors.grey),
             ),
             SizedBox(height: 20.h),
 
             Text(
               'Create Your Account',
-              style: AppTextStyles.h2().copyWith(
-                color: theme.textTheme.headlineMedium?.color,
-              ),
+              style: AppTextStyles.h2(
+                context,
+              ).copyWith(color: theme.textTheme.headlineMedium?.color),
             ),
             SizedBox(height: 10.h),
+            GoogleSignInButton(),
 
             /// Continue with Google Button
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: Text('G', style: AppTextStyles.bodyBold()),
-              label: Text('Continue with Google', style: AppTextStyles.body()),
-              style: OutlinedButton.styleFrom(
-                minimumSize: Size(double.infinity, 50.h),
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4.r),
-                ),
-              ),
-            ),
+            // OutlinedButton.icon(
+            //   onPressed: () {},
+            //   icon: Text('G', style: AppTextStyles.bodyBold(context)),
+            //   label: Text(
+            //     'Continue with Google',
+            //     style: AppTextStyles.body(context),
+            //   ),
+            //   style: OutlinedButton.styleFrom(
+            //     minimumSize: Size(double.infinity, 50.h),
+            //     foregroundColor: Colors.black,
+            //     shape: RoundedRectangleBorder(
+            //       borderRadius: BorderRadius.circular(4.r),
+            //     ),
+            //   ),
+            // ),
             SizedBox(height: 25.h),
 
             /// OR separator
@@ -305,9 +81,9 @@ class SignUpForm extends GetView<SignUpController> {
                   padding: EdgeInsets.symmetric(horizontal: 10.w),
                   child: Text(
                     'or',
-                    style: AppTextStyles.body().copyWith(
-                      color: Colors.grey.shade600,
-                    ),
+                    style: AppTextStyles.body(
+                      context,
+                    ).copyWith(color: Colors.grey.shade600),
                   ),
                 ),
                 const Expanded(child: Divider(color: Colors.grey)),
@@ -316,7 +92,7 @@ class SignUpForm extends GetView<SignUpController> {
             SizedBox(height: 30.h),
 
             /// ---------------- Account Type ----------------
-            Text("Account Type", style: AppTextStyles.bodyBold()),
+            Text("Account Type", style: AppTextStyles.bodyBold(context)),
             SizedBox(height: 10.h),
 
             Row(
@@ -369,7 +145,10 @@ class SignUpForm extends GetView<SignUpController> {
 
             /// ---------------- COMPANY FIELDS ----------------
             if (controller.accountType.value == "company") ...[
-              Text("Company Information", style: AppTextStyles.bodyBold()),
+              Text(
+                "Company Information",
+                style: AppTextStyles.bodyBold(context),
+              ),
               SizedBox(height: 15.h),
 
               CustomTextField(
@@ -387,7 +166,10 @@ class SignUpForm extends GetView<SignUpController> {
 
             /// ---------------- INDIVIDUAL FIELDS ----------------
             if (controller.accountType.value == "individual") ...[
-              Text("Personal Information", style: AppTextStyles.bodyBold()),
+              Text(
+                "Personal Information",
+                style: AppTextStyles.bodyBold(context),
+              ),
               SizedBox(height: 15.h),
 
               CustomTextField(
@@ -397,7 +179,10 @@ class SignUpForm extends GetView<SignUpController> {
               SizedBox(height: 20.h),
 
               /// Individual Job Type
-              Text("Type of Media Work", style: AppTextStyles.bodyBold()),
+              Text(
+                "Type of Media Work",
+                style: AppTextStyles.bodyBold(context),
+              ),
               SizedBox(height: 10.h),
 
               DropdownButtonFormField<String>(
@@ -447,7 +232,10 @@ class SignUpForm extends GetView<SignUpController> {
 
               /// Analyst Specialty
               if (controller.individualJob.value == "Analyst") ...[
-                Text("Analyst Specialty", style: AppTextStyles.bodyBold()),
+                Text(
+                  "Analyst Specialty",
+                  style: AppTextStyles.bodyBold(context),
+                ),
                 SizedBox(height: 10.h),
 
                 DropdownButtonFormField<String>(
@@ -506,7 +294,7 @@ class SignUpForm extends GetView<SignUpController> {
                 Expanded(
                   child: Text(
                     "I agree to the Terms of Service & Privacy Policy",
-                    style: AppTextStyles.body(),
+                    style: AppTextStyles.body(context),
                   ),
                 ),
               ],
@@ -526,14 +314,17 @@ class SignUpForm extends GetView<SignUpController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Already have an account? ", style: AppTextStyles.body()),
+                Text(
+                  "Already have an account? ",
+                  style: AppTextStyles.body(context),
+                ),
                 TextButton(
                   onPressed: controller.gosignIn,
                   child: Text(
                     'Sign In',
-                    style: AppTextStyles.bodyBold().copyWith(
-                      color: AppColors.darkBlue,
-                    ),
+                    style: AppTextStyles.bodyBold(
+                      context,
+                    ).copyWith(color: AppColors.darkBlue),
                   ),
                 ),
               ],

@@ -6,9 +6,9 @@ Widget buildSectionTitle(String title, BuildContext context) {
     padding: const EdgeInsets.only(bottom: 16),
     child: Text(
       title,
-      style: AppTextStyles.h4().copyWith(
-        color: Theme.of(context).textTheme.headlineMedium!.color,
-      ),
+      style: AppTextStyles.h4(
+        context,
+      ).copyWith(color: Theme.of(context).textTheme.headlineMedium!.color),
     ),
   );
 }

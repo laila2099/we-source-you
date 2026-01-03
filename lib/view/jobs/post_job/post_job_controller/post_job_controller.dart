@@ -196,7 +196,7 @@ class JobPostController extends GetxController {
       final user = FirebaseAuth.instance.currentUser;
       final jobMap = jobData.toMap();
       jobMap['userId'] = user?.uid ?? '';
-      
+
       await FirebaseFirestore.instance.collection('jobs').add(jobMap);
 
       Get.snackbar(

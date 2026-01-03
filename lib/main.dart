@@ -11,14 +11,48 @@ import 'package:we_source_you/routes/app_routes.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   await GetStorage.init();
+//   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+//   // Suppress assertion errors during hot reload related to overlay/navigator stack
+//   FlutterError.onError = (details) {
+//     final errorMsg = details.exceptionAsString();
+//     // Suppress known hot reload overlay/navigator assertion errors
+//     if (errorMsg.contains('_elements.contains(element)') ||
+//         errorMsg.contains('mounted') ||
+//         errorMsg.contains('Overlay') ||
+//         errorMsg.contains('isDisposed') ||
+//         errorMsg.contains('disposed EngineFlutterView')) {
+//       debugPrint('⚠️ Hot reload rendering issue (suppressed): $errorMsg');
+//       return; // Don't crash, just log
+//     }
+//     FlutterError.dumpErrorToConsole(details);
+//   };
+
+//   await TranslationService.init();
+//   runApp(const MyApp());
+// }
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await GetStorage.init();
+
+  // تأكد من تهيئة الإضافات قبل أي شيء
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await GetStorage.init();
+  await TranslationService.init();
+
   FlutterError.onError = (details) {
+    // هذا الخطأ تحديداً يحدث بسبب عدم مزامنة العناصر عند الـ Hot Restart
+    if (details.exceptionAsString().contains('_elements.contains(element)')) {
+      debugPrint(
+        '>>> Flutter Framework Sync Issue ignored during Hot Restart.',
+      );
+      return;
+    }
     FlutterError.dumpErrorToConsole(details);
   };
-  await TranslationService.init();
+
   runApp(const MyApp());
 }
 
@@ -30,6 +64,7 @@ class MyApp extends StatelessWidget {
     return ScreenUtilInit(
       designSize: const Size(360, 690),
       minTextAdapt: true,
+      ensureScreenSize: true,
       builder: (context, child) {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
@@ -42,12 +77,13 @@ class MyApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
+          theme: AppTheme.light(context),
+          darkTheme: AppTheme.dark(context),
           themeMode: ThemeMode.system,
           initialRoute: AppRoutes.home,
           initialBinding: AppBinding(),
           getPages: appPages,
+          key: UniqueKey(),
         );
       },
     );

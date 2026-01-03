@@ -1,5 +1,7 @@
 class JobPostModel {
   String? id;
+  String? userId; // 👈 صاحب الوظيفة
+
   // Step 1: Basics
   String title;
   String description;
@@ -43,6 +45,8 @@ class JobPostModel {
 
   JobPostModel({
     this.id,
+    this.userId, // 👈
+
     this.title = '',
     this.description = '',
     this.experienceLevel = 'Entry Level',
@@ -78,7 +82,10 @@ class JobPostModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'title': title,
+      'userId': userId, // 👈
+
       'description': description,
       'experienceLevel': experienceLevel,
       'jobType': jobType,
@@ -115,7 +122,9 @@ class JobPostModel {
 
   factory JobPostModel.fromMap(Map<String, dynamic> data) {
     return JobPostModel(
+      id: data['id'],
       title: data['title'] ?? '',
+      userId: data['userId'],
       description: data['description'] ?? '',
       experienceLevel: data['experienceLevel'] ?? 'Entry Level',
       jobType: data['jobType'] ?? 'Freelance',

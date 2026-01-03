@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NotificationModel {
   String? id;
-  String userId; // المستخدم الذي سيستقبل الإشعار
-  String type; // 'proposal_received', 'proposal_approved', 'proposal_rejected'
+  String userId;
+  String type;
   String title;
   String message;
   String? jobId;
@@ -32,7 +32,7 @@ class NotificationModel {
       'jobId': jobId,
       'proposalId': proposalId,
       'isRead': isRead,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
     };
   }
 
@@ -52,4 +52,3 @@ class NotificationModel {
     );
   }
 }
-

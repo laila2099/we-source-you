@@ -4,6 +4,6 @@ import 'package:we_source_you/view/auth/sign_up/sign_up_controller/sign_up_contr
 class AuthBinding extends Bindings {
   @override
   void dependencies() {
-    Get.put(SignUpController());
+    Get.put(SignUpController(), permanent: true);
   }
 }

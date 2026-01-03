@@ -294,6 +294,7 @@ import 'package:we_source_you/core/constant/app_color.dart';
 import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/view/team/team_controller/team_controller.dart';
+import 'package:we_source_you/view/team/team_profile.dart';
 import 'package:we_source_you/widgets/circular_icon/circular_icon.dart';
 import 'package:we_source_you/widgets/glass_morphism.dart';
 
@@ -504,8 +505,9 @@ class _TeamCard extends GetView<TeamController> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
-              //  => controller.viewProfile(journalist),
+              onPressed: () {
+                Get.to(() => TeamProfileView(member: journalist));
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.lightBlue,
                 foregroundColor: Colors.white,

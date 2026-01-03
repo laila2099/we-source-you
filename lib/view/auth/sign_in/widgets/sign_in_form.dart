@@ -75,7 +75,7 @@ class _LoginFormState extends State<LoginForm> {
                 ),
                 TextSpan(
                   text: "Source",
-                  style: AppTextStyles.h3().copyWith(
+                  style: AppTextStyles.h3(context).copyWith(
                     foreground: Paint()
                       ..shader = const LinearGradient(
                         colors: [Color(0xff7ab9e4), Color(0xff0c5596)],
@@ -108,21 +108,21 @@ class _LoginFormState extends State<LoginForm> {
           const SizedBox(height: 30),
 
           // Google
-          OutlinedButton.icon(
-            onPressed: () {},
-            icon: Text('G', style: Theme.of(context).textTheme.labelLarge),
-            label: Text(
-              'Continue with Google',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            style: OutlinedButton.styleFrom(
-              minimumSize: Size(double.infinity, 50.h),
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4.r),
-              ),
-            ),
-          ),
+          // OutlinedButton.icon(
+          //   onPressed: () {},
+          //   icon: Text('G', style: Theme.of(context).textTheme.labelLarge),
+          //   label: Text(
+          //     'Continue with Google',
+          //     style: Theme.of(context).textTheme.labelLarge,
+          //   ),
+          //   style: OutlinedButton.styleFrom(
+          //     minimumSize: Size(double.infinity, 50.h),
+          //     foregroundColor: Colors.black,
+          //     shape: RoundedRectangleBorder(
+          //       borderRadius: BorderRadius.circular(4.r),
+          //     ),
+          //   ),
+          // ),
           const SizedBox(height: 20),
 
           // OR

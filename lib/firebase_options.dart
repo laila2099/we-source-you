@@ -64,6 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '477012196994',
     projectId: 'we-source-you',
     storageBucket: 'we-source-you.firebasestorage.app',
+    iosClientId: '477012196994-4a9h23fbp5980pj2b4p8to27p81h58je.apps.googleusercontent.com',
     iosBundleId: 'com.example.weSourceYou',
   );
 
@@ -73,6 +74,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '477012196994',
     projectId: 'we-source-you',
     storageBucket: 'we-source-you.firebasestorage.app',
+    iosClientId: '477012196994-4a9h23fbp5980pj2b4p8to27p81h58je.apps.googleusercontent.com',
     iosBundleId: 'com.example.weSourceYou',
   );
 
@@ -85,4 +87,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'we-source-you.firebasestorage.app',
     measurementId: 'G-6X7ET2WJCS',
   );
+
 }

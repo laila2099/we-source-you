@@ -43,7 +43,7 @@ dependencies:
   firebase_core: ^4.2.1
   cloud_firestore: ^6.1.0
   intl_phone_number_input:
-  google_sign_in: ^7.2.0
+  google_sign_in: ^6.3.0
   get_storage: ^2.1.1
   flutter_localization: ^0.3.3
   file_picker: ^10.3.8

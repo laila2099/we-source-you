@@ -163,6 +163,9 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
       case "Jobs":
         Get.toNamed(AppRoutes.jobs);
         break;
+      case "Our Team":
+        Get.toNamed(AppRoutes.team);
+        break;
 
       case "Media Market":
         Get.toNamed(AppRoutes.media);

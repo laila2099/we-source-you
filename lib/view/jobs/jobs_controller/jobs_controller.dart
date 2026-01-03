@@ -287,7 +287,7 @@ class JobsController extends GetxController {
   void applyForJob(JobCardModel job) {
     // Find the corresponding JobPostModel
     JobPostModel? jobPost;
-    
+
     if (job.id != null) {
       // Try to find by id first
       try {
@@ -296,18 +296,19 @@ class JobsController extends GetxController {
         // Not found by id, continue to search by other fields
       }
     }
-    
+
     // If not found by id, try to match by title and publisher name
     if (jobPost == null) {
       try {
         jobPost = allPosts.firstWhere(
-          (post) => post.title == job.title && post.contactName == job.publisherName,
+          (post) =>
+              post.title == job.title && post.contactName == job.publisherName,
         );
       } catch (e) {
         // Not found
       }
     }
-    
+
     if (jobPost != null) {
       // Navigate to job apply page with the job details
       Get.toNamed(AppRoutes.applyJob, arguments: jobPost);

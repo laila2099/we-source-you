@@ -103,9 +103,9 @@ class SignInController extends GetxController {
     );
   }
 
-  Future<void> continueWithGoogle() async {
-    Get.snackbar("Action", "Google Sign-In not implemented yet");
-  }
+  // Future<void> continueWithGoogle() async {
+  //   Get.snackbar("Action", "Google Sign-In not implemented yet");
+  // }
 
   void goBack() => Get.back();
 

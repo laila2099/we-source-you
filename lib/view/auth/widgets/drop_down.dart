@@ -27,7 +27,7 @@ class CountryDropdownField extends StatelessWidget {
         ) {
           return DropdownMenuItem<String>(
             value: value,
-            child: Text(value, style: AppTextStyles.body()),
+            child: Text(value, style: AppTextStyles.body(context)),
           );
         }).toList(),
         onChanged: (String? newValue) {

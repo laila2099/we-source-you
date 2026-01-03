@@ -27,12 +27,9 @@ final appPages = <GetPage>[
     page: () => MediaView(),
     binding: MediaBinding(),
   ),
-  GetPage(name: AppRoutes.profile, page: () => ProfileView()),
+
+  GetPage(name: AppRoutes.profile, page: () => ProfileScreen()),
   GetPage(name: AppRoutes.post, page: () => JobPostScreen()),
   GetPage(name: AppRoutes.applyJob, page: () => JobApply()),
-  GetPage(
-    name: AppRoutes.team,
-    page: () => TeamView(),
-    binding: TeamBinding(),
-  ),
+  GetPage(name: AppRoutes.team, page: () => TeamView()),
 ];

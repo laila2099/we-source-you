@@ -1,7 +1,19 @@
-class ProjectModel {
-  final String title;
-  final String image;
-  final String link;
+enum ProjectStatus {
+  pendingPayment,
+  inProgress,
+  underReview,
+  completed,
+  inDispute,
+}
 
-  ProjectModel({required this.title, required this.image, required this.link});
+class ProjectModel {
+  final String id;
+  final double budget;
+  ProjectStatus status;
+
+  ProjectModel({
+    required this.id,
+    required this.budget,
+    this.status = ProjectStatus.pendingPayment,
+  });
 }

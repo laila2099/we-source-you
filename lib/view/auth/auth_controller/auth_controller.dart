@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -145,6 +146,33 @@ class AuthController extends GetxController {
     }
   }
 
+  Future<UserCredential?> signInWithGoogle() async {
+    try {
+      // Use named constructor
+      final GoogleSignIn googleSignIn = GoogleSignIn.standard(
+        scopes: ['email', 'profile'],
+      );
+
+      // Start the sign-in flow
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) return null; // user canceled
+
+      // Obtain the ID token (Web only requires idToken)
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken, // ✅ accessToken is no longer needed
+      );
+
+      // Sign in to Firebase
+      return await _auth.signInWithCredential(credential);
+    } catch (e) {
+      print('Google Sign-In Error: $e');
+      rethrow;
+    }
+  }
+
   // ---------------------------
   // Manual check & update auth state
   // ---------------------------
@@ -226,12 +254,18 @@ class AuthController extends GetxController {
   // Avatar letter
   // ---------------------------
   String get avatarLetter {
-    if (accountType.value == 'company' && companyName.isNotEmpty) {
-      return companyName.value[0].toUpperCase();
+    String nameToUse = '';
+
+    if (accountType.value == 'company' && companyName.value.trim().isNotEmpty) {
+      nameToUse = companyName.value.trim();
+    } else if (fullName.value.trim().isNotEmpty) {
+      nameToUse = fullName.value.trim();
     }
-    if (fullName.isNotEmpty) {
-      return fullName.value[0].toUpperCase();
+
+    if (nameToUse.isNotEmpty) {
+      return nameToUse[0].toUpperCase();
     }
+
     return '?';
   }
 }

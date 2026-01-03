@@ -28,9 +28,7 @@ import 'package:get/get.dart';
 import '../media_card/media_card.dart';
 import '../media_market_controller/media_market_controller.dart';
 
-Widget buildDiscoverGrid() {
-  final controller = Get.find<MediaController>();
-
+Widget buildDiscoverGrid(MediaController controller) {
   return Obx(() {
     if (controller.discoverMedia.isEmpty) {
       return const Center(child: Text("No media found"));

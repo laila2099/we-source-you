@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:we_source_you/core/constant/app_color.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/core/constant/text_style.dart';
 import 'package:we_source_you/routes/app_routes.dart';
@@ -156,15 +157,13 @@ class HomeView extends StatelessWidget {
           _logo(context),
           SizedBox(width: 10.w),
 
-          // Desktop-only dropdowns
           if (isDesktop) ...[
-            // HoverDropdown(
-            //   title: "Jobs",
-            //   items: const ["Buyers", "Suppliers", "Consulting"],
-            // ),
-            HoverDropdown(
-              title: "Our Team",
-              items: const ["Who We Are", "Our Team", "Contact"],
+            TextButton(
+              onPressed: () => Get.toNamed(AppRoutes.team),
+              child: Text(
+                "Our Team",
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
             TextButton(
               onPressed: () => Get.toNamed(AppRoutes.jobs),
@@ -174,9 +173,7 @@ class HomeView extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () =>
-                  Get.to(() => MediaView(), binding: MediaBinding()),
-
+              onPressed: () => Get.toNamed(AppRoutes.media),
               child: Text(
                 "Media Market",
                 style: Theme.of(context).textTheme.titleMedium,
@@ -186,13 +183,10 @@ class HomeView extends StatelessWidget {
 
           Spacer(),
 
-          // Desktop navigation links
           if (isDesktop)
             Row(
               children: [
                 navButton("Home", context),
-
-                // Only this part reacts to login state
                 Obx(() {
                   if (!authController.isLoggedIn.value) {
                     return Row(
@@ -202,36 +196,28 @@ class HomeView extends StatelessWidget {
                       ],
                     );
                   } else {
-                    return Row(children: [_userAvatarMenu()]);
+                    // Desktop -> show username
+                    return Row(children: [_userAvatarMenu(isDesktop: true)]);
                   }
                 }),
-                // WebHoverButton(
-                //   height: 35.h,
-                //   width: 30.w,
-                //   text: "Post a Job",
-                //   onPressed: () => Get.toNamed("/jobs"),
-                // ),
                 SizedBox(width: 3.w),
-                LanguageSwitcher(),
-
-                // navButton("Journalist"),
+                const LanguageSwitcher(),
               ],
             )
           else
             Row(
               children: [
-                // If logged in show avatar
                 Obx(() {
                   if (authController.isLoggedIn.value) {
+                    // Mobile/Tablet -> show circular avatar
                     return Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: _userAvatarMenu(), // avatar outside the menu
+                      child: _userAvatarMenu(isDesktop: false),
                     );
                   } else {
                     return const SizedBox.shrink();
                   }
                 }),
-
                 IconButton(
                   icon: const Icon(Icons.menu, size: 30),
                   onPressed: controller.toggleMenu,
@@ -256,7 +242,7 @@ class HomeView extends StatelessWidget {
           ),
           TextSpan(
             text: "Source",
-            style: AppTextStyles.h3().copyWith(
+            style: AppTextStyles.h3(context).copyWith(
               foreground: Paint()
                 ..shader = const LinearGradient(
                   colors: [Color(0xff7ab9e4), Color(0xff0c5596)],
@@ -310,7 +296,7 @@ class HomeView extends StatelessWidget {
   // ----------------------------------------------------------
   // ✅ USER AVATAR MENU
   // ----------------------------------------------------------
-  Widget _userAvatarMenu() {
+  Widget _userAvatarMenu({required bool isDesktop}) {
     return PopupMenuButton<String>(
       offset: const Offset(0, 40),
       onSelected: (value) {
@@ -325,20 +311,38 @@ class HomeView extends StatelessWidget {
         const PopupMenuItem(value: 'Profile', child: Text('Profile')),
         const PopupMenuItem(value: 'logout', child: Text('Logout')),
       ],
-      child: CircularIcon(
-        gradientColors: [Colors.blue, Colors.purple],
-        child: Obx(() {
-          return Center(
+      child: Obx(() {
+        // Get username or first letter for avatar
+        final userName =
+            authController.fullName.value; // افترض أنه موجود في authController
+        if (isDesktop) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
-              authController.avatarLetter,
+              userName,
               style: const TextStyle(
-                color: Colors.white,
+                color: Colors.black,
                 fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
             ),
           );
-        }),
-      ),
+        } else {
+          // Mobile/Tablet avatar
+          return CircularIcon(
+            gradientColors: [AppColors.lightBlue, AppColors.darkBlue],
+            child: Center(
+              child: Text(
+                authController.avatarLetter,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          );
+        }
+      }),
     );
   }
 }

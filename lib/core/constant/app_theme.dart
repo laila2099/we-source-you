@@ -4,21 +4,21 @@ import 'package:we_source_you/core/constant/text_style.dart';
 
 class AppTheme {
   // Light Theme
-  static ThemeData light() {
+  static ThemeData light(BuildContext context) {
     return ThemeData(
       brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.cream,
       useMaterial3: true,
       textTheme: TextTheme(
-        headlineLarge: AppTextStyles.h1(),
-        headlineMedium: AppTextStyles.h2(),
-        headlineSmall: AppTextStyles.h3(),
-        titleLarge: AppTextStyles.h4(),
+        headlineLarge: AppTextStyles.h1(context),
+        headlineMedium: AppTextStyles.h2(context),
+        headlineSmall: AppTextStyles.h3(context),
+        titleLarge: AppTextStyles.h4(context),
 
-        bodyLarge: AppTextStyles.body(),
-        bodyMedium: AppTextStyles.body(),
-        bodySmall: AppTextStyles.caption(),
-        labelLarge: AppTextStyles.button(),
+        bodyLarge: AppTextStyles.body(context),
+        bodyMedium: AppTextStyles.body(context),
+        bodySmall: AppTextStyles.caption(context),
+        labelLarge: AppTextStyles.button(context),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -46,21 +46,27 @@ class AppTheme {
   }
 
   // Dark Theme
-  static ThemeData dark() {
+  static ThemeData dark(BuildContext context) {
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: Colors.black,
       useMaterial3: true,
       textTheme: TextTheme(
-        headlineLarge: AppTextStyles.h1().copyWith(color: Colors.white),
-        headlineMedium: AppTextStyles.h2().copyWith(color: Colors.white),
-        headlineSmall: AppTextStyles.h3().copyWith(color: Colors.white),
-        titleLarge: AppTextStyles.h4().copyWith(color: Colors.white),
+        headlineLarge: AppTextStyles.h1(context).copyWith(color: Colors.white),
+        headlineMedium: AppTextStyles.h2(context).copyWith(color: Colors.white),
+        headlineSmall: AppTextStyles.h3(context).copyWith(color: Colors.white),
+        titleLarge: AppTextStyles.h4(context).copyWith(color: Colors.white),
 
-        bodyLarge: AppTextStyles.body().copyWith(color: Colors.grey[300]),
-        bodyMedium: AppTextStyles.body().copyWith(color: Colors.grey[300]),
-        bodySmall: AppTextStyles.caption().copyWith(color: Colors.grey[400]),
-        labelLarge: AppTextStyles.button().copyWith(color: Colors.white),
+        bodyLarge: AppTextStyles.body(
+          context,
+        ).copyWith(color: Colors.grey[300]),
+        bodyMedium: AppTextStyles.body(
+          context,
+        ).copyWith(color: Colors.grey[300]),
+        bodySmall: AppTextStyles.caption(
+          context,
+        ).copyWith(color: Colors.grey[400]),
+        labelLarge: AppTextStyles.button(context).copyWith(color: Colors.white),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,

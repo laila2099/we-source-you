@@ -18,12 +18,10 @@
 // }
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../category_card/category_card.dart';
+import '../category/category_card.dart';
 import '../media_market_controller/media_market_controller.dart';
 
-Widget buildCategoryGrid() {
-  final controller = Get.find<MediaController>();
-
+Widget buildCategoryGrid(MediaController controller) {
   return Obx(() {
     final cats = controller.categories;
     if (cats.isEmpty) return const SizedBox();

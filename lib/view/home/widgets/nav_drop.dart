@@ -53,8 +53,9 @@ class _HoverDropdownState extends State<HoverDropdown> {
                         ),
                         child: Text(
                           item,
-                          style: AppTextStyles.body().copyWith(
+                          style: AppTextStyles.body(context).copyWith(
                             fontSize: AppTextStyles.size(
+                              context,
                               mobile: 13,
                               tablet: 14,
                               desktop: 15,

@@ -58,7 +58,7 @@ class HeroSection extends StatelessWidget {
           Text(
             "Trusted by Leading Media Organizations",
             textAlign: TextAlign.center,
-            style: AppTextStyles.h4().copyWith(
+            style: AppTextStyles.h4(context).copyWith(
               color: Theme.of(context).textTheme.headlineMedium!.color,
             ),
           ),

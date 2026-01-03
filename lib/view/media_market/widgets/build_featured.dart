@@ -59,9 +59,7 @@ import 'package:get/get.dart';
 import '../media_card/media_card.dart';
 import '../media_market_controller/media_market_controller.dart';
 
-Widget buildFeaturedList() {
-  final controller = Get.find<MediaController>();
-
+Widget buildFeaturedList(MediaController controller) {
   return Obx(() {
     final items = controller.featuredMedia;
     if (items.isEmpty)

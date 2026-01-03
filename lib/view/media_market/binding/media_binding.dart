@@ -13,8 +13,6 @@ import 'package:we_source_you/view/media_market/media_market_controller/media_ma
 class MediaBinding extends Bindings {
   @override
   void dependencies() {
-    if (!Get.isRegistered<MediaController>()) {
-      Get.lazyPut<MediaController>(() => MediaController(), fenix: true);
-    }
+    Get.lazyPut<MediaController>(() => MediaController(), fenix: true);
   }
 }
