@@ -158,6 +158,32 @@ class MediaController extends GetxController {
 
   void setSort(String value) => sortBy.value = value;
   void goBack() => Get.back();
+  void updateRating(String mediaId, double rating, int count) {
+    void updateList(List<MediaItem> list) {
+      final index = list.indexWhere((item) => item.id == mediaId);
+      if (index != -1) {
+        final old = list[index];
+        list[index] = MediaItem(
+          id: old.id,
+          title: old.title,
+          author: old.author,
+          price: old.price,
+          description: old.description,
+          views: old.views,
+          imageUrl: old.imageUrl,
+          isVerified: old.isVerified,
+          category: old.category,
+          license: old.license,
+          mediaType: old.mediaType,
+          rating: rating,
+          ratingCount: count,
+        );
+      }
+    }
+
+    updateList(discoverMedia);
+    updateList(featuredMedia);
+  }
 
   @override
   void onClose() {

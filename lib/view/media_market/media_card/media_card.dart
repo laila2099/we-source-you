@@ -270,11 +270,18 @@ class MediaCard extends StatelessWidget {
                       const Icon(Icons.star, size: 14, color: Colors.amber),
                       const SizedBox(width: 4),
                       Text(
-                        item.ratingCount.toStringAsFixed(1),
+                        // تأكد من استخدام الحقل الذي يمثل "المتوسط" وليس "العدد"
+                        item.rating.toStringAsFixed(1),
                         style: const TextStyle(
                           fontSize: 12,
+                          fontWeight: FontWeight.bold, // جعل الرقم أوضح
                           color: Colors.black,
                         ),
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        "(${item.ratingCount})", // عرض عدد المقيمين بجانب المتوسط
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                       ),
                     ],
                   ),

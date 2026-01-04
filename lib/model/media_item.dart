@@ -5,6 +5,7 @@ class MediaItem {
   final double price;
   final int views;
   final int ratingCount;
+  final double rating;
   final String? imageUrl;
   final bool isVerified;
   final String category;
@@ -20,6 +21,7 @@ class MediaItem {
     required this.description,
     this.views = 0,
     this.ratingCount = 0,
+    required this.rating,
     this.imageUrl,
     this.isVerified = false,
     this.category = "other",
@@ -30,10 +32,11 @@ class MediaItem {
   factory MediaItem.fromMap(Map<String, dynamic> data, String id) {
     return MediaItem(
       id: id,
-      title: data["title"]?.toString() ?? "",
+      title: data["title"]?.toString() ?? "No Title",
       description: data["description"]?.toString() ?? "",
       author: data["author"]?.toString() ?? "Unknown",
-      // تحويل آمن للأرقام لضمان عدم حدوث TypeError
+      // تحويل آمن للبيانات الرقمية لضمان عدم حدوث خطأ Casting
+      rating: (data['rating'] ?? 0.0).toDouble(),
       price: (data["price"] ?? 0.0).toDouble(),
       views: (data["views"] ?? 0).toInt(),
       ratingCount: (data['ratingCount'] ?? 0).toInt(),
@@ -52,6 +55,7 @@ class MediaItem {
       "price": price,
       "views": views,
       "ratingCount": ratingCount,
+      "rating": rating,
       "imageUrl": imageUrl,
       "isVerified": isVerified,
       "category": category,
