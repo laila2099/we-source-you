@@ -23,5 +23,6 @@ class AppBinding extends Bindings {
     Get.put<AuthController>(AuthController(), permanent: true);
     Get.put<HomeController>(HomeController(), permanent: true);
     Get.put<TeamController>(TeamController(), permanent: true);
+    // Get.put<EscrowController>(EscrowController(), permanent: true);
   }
 }

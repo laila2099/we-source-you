@@ -1,0 +1,152 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Jobs collection
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.createdBy) ||
+        isOwner(resource.data.acceptedBy) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Payments collection - Strict security
+    match /payments/{paymentId} {
+      // Only authenticated users can read their own payments or admin can read all
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.createdBy) ||
+        isOwner(resource.data.workerId) ||
+        isAdmin()
+      );
+
+      // Only backend (Cloud Functions) can create payments
+      allow create: if false;
+
+      // Only backend (Cloud Functions) can update payment status
+      // Clients can only update non-critical fields
+      allow update: if isAuthenticated() && (
+        // Allow updating metadata fields only
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'amount', 'paymentIntentId', 'captureId', 'orderId'])) &&
+        (isOwner(resource.data.createdBy) || isAdmin())
+      );
+
+      // Only admin can delete payments
+      allow delete: if isAdmin();
+    }
+
+    // Payouts collection - Admin and worker access only
+    match /payouts/{payoutId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.workerId) ||
+        isAdmin()
+      );
+      // Only backend can create/update payouts
+      allow create: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Webhook idempotency collection - Backend only
+    match /webhook_idempotency/{idempotencyKey} {
+      allow read: if isAdmin();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.userId) ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        isOwner(resource.data.userId) ||
+        isAdmin()
+      );
+    }
+
+    // Team collection
+    match /team/{teamId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isOwner(teamId) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Transactions collection
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.buyerId) ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if false; // Only backend can update
+      allow delete: if isAdmin();
+    }
+
+    // Hiring records collection
+    match /hiring_records/{hiringId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.clientId) ||
+        isOwner(resource.data.teamId) ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if false; // Only backend can update
+      allow delete: if isAdmin();
+    }
+
+    // Proposal payments collection
+    match /proposal_payments/{paymentId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.teamId) ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow update: if false; // Only backend can update
+      allow delete: if isAdmin();
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

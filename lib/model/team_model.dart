@@ -73,6 +73,7 @@ class TeamModel {
   final Color initialsColor;
   final String name;
   final String title;
+  final String country;
   final String location;
   final double rating;
   final int reviews;
@@ -90,6 +91,8 @@ class TeamModel {
     required this.initialsColor,
     required this.name,
     required this.title,
+    required this.country,
+
     required this.location,
     required this.rating,
     required this.reviews,
@@ -117,6 +120,7 @@ class TeamModel {
       initialsColor: typeColors[type] ?? Colors.grey,
       name: map['name'] ?? 'Unknown',
       title: map['title'] ?? '',
+      country: map['country'] ?? '',
       location: map['location'] ?? 'Not specified',
       rating: (map['rating'] ?? 0).toDouble(),
       reviews: map['reviews'] ?? 0,

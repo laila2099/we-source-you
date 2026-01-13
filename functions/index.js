@@ -1,84 +1,38 @@
-// /**
-//  * Import function triggers from their respective submodules:
-//  *
-//  * const {onCall} = require("firebase-functions/v2/https");
-//  * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
-//  *
-//  * See a full list of supported triggers at https://firebase.google.com/docs/functions
-//  */
-
-// const {setGlobalOptions} = require("firebase-functions");
-// const {onRequest} = require("firebase-functions/https");
-// const logger = require("firebase-functions/logger");
-
-// // For cost control, you can set the maximum number of containers that can be
-// // running at the same time. This helps mitigate the impact of unexpected
-// // traffic spikes by instead downgrading performance. This limit is a
-// // per-function limit. You can override the limit for each function using the
-// // `maxInstances` option in the function's options, e.g.
-// // `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// // NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// // functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// // In the v1 API, each function can only serve one request per container, so
-// // this will be the maximum concurrent request count.
-// setGlobalOptions({ maxInstances: 10 });
-
-// // Create and deploy your first functions
-// // https://firebase.google.com/docs/functions/get-started
-
-// // exports.helloWorld = onRequest((request, response) => {
-// //   logger.info("Hello logs!", {structuredData: true});
-// //   response.send("Hello from Firebase!");
-// // });
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-const fetch = require("node-fetch");
-
+const admin = require('firebase-admin');
 admin.initializeApp();
 
-const SUMSUB_API_URL = "https://api.sumsub.com";
-const functions = require("firebase-functions");
-const SUMSUB_SECRET_KEY = functions.config().sumsub.key;
-const SUMSUB_APP_ID = functions.config().sumsub.appid;
+// Stripe Functions
+exports.createStripeEscrow = require('./stripe').createStripeEscrow;
+exports.releaseStripePayment = require('./stripe').releaseStripePayment;
 
+// PayPal Functions
+exports.createPaypalEscrow = require('./paypal').createPaypalEscrow;
+exports.capturePaypalAuthorization = require('./paypal').capturePaypalAuthorization;
+exports.releasePaypalPayment = require('./paypal').releasePaypalPayment;
 
-exports.generateKycToken = functions.https.onCall(async (data, context) => {
-  const externalUserId = context.auth.uid; // UID من Firebase Auth
-  const role = "applicant"; // ثابت عادة
+// Webhook Handlers
+exports.stripeWebhook = require('./webhooks').stripeWebhook;
+exports.paypalWebhook = require('./webhooks').paypalWebhook;
 
-  // توليد JWT token لـ Sumsub
-  const response = await fetch(`${SUMSUB_API_URL}/resources/applicants`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${SUMSUB_SECRET_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      externalUserId: externalUserId,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email
-    })
-  });
+// Refund & Dispute Functions
+exports.processFullRefund = require('./refunds').processFullRefund;
+exports.processPartialRefund = require('./refunds').processPartialRefund;
+exports.handleDispute = require('./refunds').handleDispute;
 
-  const json = await response.json();
+// Payout Functions
+exports.processAutoPayout = require('./payouts').processAutoPayout;
+exports.autoPayoutAfterDisputePeriod = require('./payouts').autoPayoutAfterDisputePeriod;
 
-  // Sumsub يرجع applicantId
-  const applicantId = json.id;
+// Marketplace Payment Functions
+exports.createMediaPaymentIntent = require('./marketplace_payments').createMediaPaymentIntent;
+exports.createHiringPaymentIntent = require('./marketplace_payments').createHiringPaymentIntent;
+exports.createProposalPaymentIntent = require('./marketplace_payments').createProposalPaymentIntent;
+exports.createMediaPayPalOrder = require('./marketplace_payments').createMediaPayPalOrder;
+exports.createHiringPayPalOrder = require('./marketplace_payments').createHiringPayPalOrder;
+exports.createProposalPayPalOrder = require('./marketplace_payments').createProposalPayPalOrder;
+exports.capturePayPalPayment = require('./marketplace_payments').capturePayPalPayment;
 
-  // توليد access token
-  const tokenResponse = await fetch(`${SUMSUB_API_URL}/resources/accessTokens`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${SUMSUB_SECRET_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      userId: applicantId,
-      ttlInSecs: 3600 // صلاحية ساعة واحدة
-    })
-  });
-
-  const tokenJson = await tokenResponse.json();
-  return { token: tokenJson.token };
-});
+// Release payment functions (after work completion)
+exports.releaseMediaPayment = require('./release_marketplace_payments').releaseMediaPayment;
+exports.releaseHiringPayment = require('./release_marketplace_payments').releaseHiringPayment;
+exports.releaseProposalPayment = require('./release_marketplace_payments').releaseProposalPayment;

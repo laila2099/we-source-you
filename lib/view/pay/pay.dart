@@ -1,112 +1,223 @@
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+// import 'package:we_source_you/core/services/project_controller.dart';
+
+// class EscrowWebPage extends StatelessWidget {
+//   final EscrowController c = Get.put(EscrowController());
+
+//   EscrowWebPage({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: const Text("Escrow Payment")),
+//       body: SingleChildScrollView(
+//         padding: const EdgeInsets.all(20),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Text(
+//               "Job / Item: ${c.title.value}",
+//               style: const TextStyle(fontSize: 20),
+//             ),
+//             const SizedBox(height: 10),
+//             Text(
+//               "Amount: \$${c.amount.value.toStringAsFixed(2)}",
+//               style: const TextStyle(fontSize: 18),
+//             ),
+//             const SizedBox(height: 20),
+
+//             // Payment Method Selection
+//             Obx(
+//               () => Row(
+//                 children: [
+//                   ChoiceChip(
+//                     label: const Text("Stripe"),
+//                     selected: c.selectedMethod.value == PaymentMethod.stripe,
+//                     onSelected: (val) =>
+//                         c.selectedMethod.value = PaymentMethod.stripe,
+//                   ),
+//                   const SizedBox(width: 10),
+//                   ChoiceChip(
+//                     label: const Text("PayPal"),
+//                     selected: c.selectedMethod.value == PaymentMethod.paypal,
+//                     onSelected: (val) =>
+//                         c.selectedMethod.value = PaymentMethod.paypal,
+//                   ),
+//                 ],
+//               ),
+//             ),
+//             const SizedBox(height: 30),
+
+//             // Pay Button
+//             Center(
+//               child: Obx(
+//                 () => ElevatedButton(
+//                   onPressed: c.isProcessing.value ? null : c.pay,
+//                   child: Text(
+//                     c.isProcessing.value ? "Processing..." : "Pay Now",
+//                   ),
+//                 ),
+//               ),
+//             ),
+//             const SizedBox(height: 30),
+
+//             // Release Button
+//             Center(
+//               child: Obx(
+//                 () => ElevatedButton(
+//                   onPressed: c.canRelease() ? c.releasePayment : null,
+//                   child: const Text("Release Payment"),
+//                 ),
+//               ),
+//             ),
+//             const SizedBox(height: 30),
+
+//             // Payment Status
+//             Obx(
+//               () => Text(
+//                 "Payment Status: ${c.getStatusString()}",
+//                 style: const TextStyle(fontSize: 16),
+//               ),
+//             ),
+//             const SizedBox(height: 10),
+//             Obx(
+//               () => Text(
+//                 "Company Fee: \$${c.companyFee.value.toStringAsFixed(2)}",
+//                 style: const TextStyle(fontSize: 16),
+//               ),
+//             ),
+//             Obx(
+//               () => Text(
+//                 "Worker Amount: \$${c.workerAmount.value.toStringAsFixed(2)}",
+//                 style: const TextStyle(fontSize: 16),
+//               ),
+//             ),
+//             Obx(
+//               () => Text(
+//                 "Refunded Amount: \$${c.refundAmount.value.toStringAsFixed(2)}",
+//                 style: const TextStyle(fontSize: 16),
+//               ),
+//             ),
+//             Obx(
+//               () => Text(
+//                 "Dispute Status: ${c.disputeStatus.value.isEmpty ? "None" : c.disputeStatus.value}",
+//                 style: const TextStyle(fontSize: 16),
+//               ),
+//             ),
+//             Obx(
+//               () => Text(
+//                 "Auto Payout Status: ${c.payoutStatus.value.isEmpty ? "Pending" : c.payoutStatus.value}",
+//                 style: const TextStyle(fontSize: 16),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:we_source_you/core/services/project_controller.dart';
-import 'package:we_source_you/model/project_model.dart';
+import 'package:we_source_you/core/services/payment_controller.dart';
+import 'package:we_source_you/model/payment_models.dart';
 
-class ProjectManagementPage extends StatelessWidget {
-  final controller = Get.put(ProjectController());
+class JobPaymentScreen extends StatelessWidget {
+  final PaymentController controller = Get.put(PaymentController());
 
-  ProjectManagementPage({super.key});
+  // Variables passed from previous screen
+  final String proposalId = "prop_123";
+  final String jobId = "job_456";
+  final double amount = 150.00;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("إدارة المشروع")),
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints(
-            maxWidth: 800,
-          ), // حماية من التوسع الزائد في الويب
-          padding: const EdgeInsets.all(20),
-          child: Obx(() {
-            return Column(
+      appBar: AppBar(title: Text("Secure Payment")),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return Center(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildStatusCard(),
-                const SizedBox(height: 30),
-                _buildActionButtons(),
+                CircularProgressIndicator(),
+                SizedBox(height: 20),
+                Text(controller.statusMessage.value),
               ],
-            );
-          }),
-        ),
-      ),
-    );
-  }
-
-  // كرت حالة المشروع
-  Widget _buildStatusCard() {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text(
-              "ميزانية المشروع: \$${controller.project.value.budget}",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const Divider(),
-            Text(
-              "الحالة الحالية: ${controller.project.value.status.name.capitalizeFirst}",
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+          );
+        }
 
-  // أزرار العمليات (تظهر وتختفي حسب الحالة)
-  Widget _buildActionButtons() {
-    if (controller.isLoading.value) return const CircularProgressIndicator();
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                "Total Amount: \$$amount",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Text(
+                "Funds will be held securely by the Company until you approve the work.",
+                style: TextStyle(color: Colors.grey),
+              ),
+              SizedBox(height: 40),
 
-    switch (controller.project.value.status) {
-      case ProjectStatus.pendingPayment:
-        return ElevatedButton(
-          onPressed: controller.payToPlatform,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
+              // STRIPE BUTTON
+              ElevatedButton.icon(
+                icon: Icon(Icons.credit_card),
+                label: Text("Pay via Card (Stripe)"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  padding: EdgeInsets.all(20),
+                ),
+                onPressed: () async {
+                  PaymentResult result = await controller
+                      .initiateMarketplacePayment(
+                        type: MarketItemType.proposal,
+                        method: PaymentMethod.stripe,
+                        proposalId: proposalId,
+                        jobId: jobId,
+                        amount: amount,
+                      );
+
+                  if (result.success) {
+                    // Navigate to Chat Screen or wait for Firestore Listener to update UI
+                    Get.offNamed('/chat', arguments: {'jobId': jobId});
+                  }
+                },
+              ),
+
+              SizedBox(height: 20),
+
+              // PAYPAL BUTTON
+              ElevatedButton.icon(
+                icon: Icon(Icons.paypal),
+                label: Text("Pay via PayPal"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: EdgeInsets.all(20),
+                ),
+                onPressed: () async {
+                  PaymentResult result = await controller
+                      .initiateMarketplacePayment(
+                        type: MarketItemType.proposal,
+                        method: PaymentMethod.paypal,
+                        proposalId: proposalId,
+                        jobId: jobId,
+                        amount: amount,
+                      );
+
+                  if (result.success) {
+                    Get.offNamed('/chat', arguments: {'jobId': jobId});
+                  }
+                },
+              ),
+            ],
           ),
-          child: const Text("دفع قيمة المشروع للخزنة (بدء العمل)"),
         );
-
-      case ProjectStatus.inProgress:
-        return Column(
-          children: [
-            const Text("المستقل يعمل الآن..."),
-            ElevatedButton(
-              onPressed: controller.submitProject,
-              child: const Text("محاكاة: تسليم المستقل للعمل"),
-            ),
-          ],
-        );
-
-      case ProjectStatus.underReview:
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: controller.approveAndReleaseFunds,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                child: const Text("قبول وتحويل المال"),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: controller.openDispute,
-                child: const Text("فتح نزاع / تعديلات"),
-              ),
-            ),
-          ],
-        );
-
-      case ProjectStatus.completed:
-        return const Text("✅ تمت العملية بنجاح وتم استلام المستقل لأتعابه");
-
-      case ProjectStatus.inDispute:
-        return const Text("⚖️ المشروع تحت مراجعة الدعم الفني");
-    }
+      }),
+    );
   }
 }

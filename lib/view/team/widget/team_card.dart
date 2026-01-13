@@ -355,7 +355,7 @@ class FeaturedteamlistsView extends GetView<TeamController> {
                           : ResponsiveLayout.isTablet(context)
                           ? 280
                           : MediaQuery.of(context).size.width * 0.9,
-                      child: _TeamCard(journalist: j),
+                      child: TeamCard(journalist: j),
                     ),
                 ],
               );
@@ -387,9 +387,9 @@ class FeaturedteamlistsView extends GetView<TeamController> {
 
 // ------------------- Individual Card -------------------
 
-class _TeamCard extends GetView<TeamController> {
+class TeamCard extends GetView<TeamController> {
   final TeamModel journalist;
-  const _TeamCard({required this.journalist});
+  const TeamCard({required this.journalist});
 
   @override
   Widget build(BuildContext context) {

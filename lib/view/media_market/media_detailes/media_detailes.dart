@@ -298,10 +298,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/model/media_item.dart';
+import 'package:we_source_you/view/jobs/job_proposals/job_proposals_view.dart';
 import 'package:we_source_you/view/media_market/media_market_controller/media_market_controller.dart';
 import 'package:we_source_you/view/pay/pay.dart';
-import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart'; // تأكد من اسم الملف button وليس buttom إذا قمت بتعديله
+import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
+import 'package:we_source_you/core/services/payment_controller.dart';
+import 'package:we_source_you/widgets/payment/payment_summary_sheet.dart';
 
 class MediaDetailPage extends StatefulWidget {
   final MediaItem item;
@@ -653,44 +656,33 @@ class _MediaDetailPageState extends State<MediaDetailPage> {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      Get.to(() => const SizedBox()); // استبدل هذا بصفحة تسجيل الدخول الخاصة بك
       Get.snackbar("Login Required", "Please login to purchase items.");
       return;
     }
 
-    try {
-      // إظهار Loading
-      Get.dialog(
-        const Center(child: CircularProgressIndicator()),
-        barrierDismissible: false,
-      );
-
-      final data = {
-        'ownerId': user.uid,
-        'mediaId': widget.item.id,
-        'mediaTitle': widget.item.title,
-        'budget': widget.item.price,
-        'status': 'pendingPayment',
-        'createdAt': FieldValue.serverTimestamp(),
-      };
-
-      final docRef = await FirebaseFirestore.instance
-          .collection('projects')
-          .add(data);
-
-      // إغلاق Loading
-      if (Get.isDialogOpen ?? false) Get.back();
-
-      Get.to(() => ProjectManagementPage(), arguments: docRef.id);
-    } catch (e) {
-      if (Get.isDialogOpen ?? false) Get.back();
-      debugPrint('Failed to create project: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to create project. Please try again.',
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
-      );
+    if (widget.item.id == null) {
+      Get.snackbar("Error", "Invalid media item");
+      return;
     }
+
+    // Initialize PaymentController if not already initialized
+    if (!Get.isRegistered<PaymentController>()) {
+      Get.put(PaymentController());
+    }
+
+    final paymentController = Get.find<PaymentController>();
+
+    // Show payment summary sheet
+    Get.bottomSheet(
+      PaymentSummarySheet(
+        title: widget.item.title,
+        subtitle: widget.item.description,
+        amount: widget.item.price,
+        proposalId: '',
+        jobId: '',
+        teamId: '',
+      ),
+      isScrollControlled: true,
+    );
   }
 }
