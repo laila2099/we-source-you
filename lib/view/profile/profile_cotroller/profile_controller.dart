@@ -74,6 +74,7 @@
 //     }
 //   }
 // }
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -155,14 +156,14 @@ class ProfileController extends GetxController {
         emailCtrl.text = data["email"] ?? "";
         phoneCtrl.text = data["phone"] ?? "";
         cityCtrl.text = data["city"] ?? "";
-        
+
         // Handle mediaWorkType as list or string
         if (data["mediaWorkTypes"] != null) {
           mediaWorkTypes.value = List<String>.from(data["mediaWorkTypes"]);
         } else if (data["mediaWorkType"] != null) {
           mediaWorkTypes.value = [data["mediaWorkType"]];
         }
-        
+
         socialLinksCtrl.text = data["socialLinks"] ?? "";
       } else if (accountType.value == "company") {
         companyNameCtrl.text = data["companyName"] ?? "";
@@ -183,7 +184,7 @@ class ProfileController extends GetxController {
   Future<void> fetchUserJobs() async {
     try {
       isLoadingJobs.value = true;
-      
+
       final snapshot = await firestore
           .collection('jobs')
           .where('userId', isEqualTo: uid)
@@ -265,10 +266,7 @@ class ProfileController extends GetxController {
               "specialties": mediaWorkTypes.toList(),
             };
           } else {
-            teamData = {
-              "name": companyNameCtrl.text,
-              "title": "Company",
-            };
+            teamData = {"name": companyNameCtrl.text, "title": "Company"};
           }
           await firestore.collection('team').doc(uid).update(teamData);
         }
@@ -287,5 +285,13 @@ class ProfileController extends GetxController {
 
   void navigateToJob(JobPostModel job) {
     Get.toNamed(AppRoutes.applyJob, arguments: job);
+  }
+
+  Future<void> updateField(String key, dynamic value) async {
+    try {
+      await firestore.collection('users').doc(uid).update({key: value});
+    } catch (e) {
+      Get.snackbar("Error", "Failed to update $key");
+    }
   }
 }

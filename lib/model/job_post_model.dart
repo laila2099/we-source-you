@@ -33,7 +33,7 @@ class JobPostModel {
   List<String> skills;
   List<String> languages;
   List<String> mediaTypes;
-  List<String> locations;
+  final String jobLocationType; // Remote / Onsite
 
   // Step 5: Additional Info
   List<String> benefits;
@@ -71,7 +71,7 @@ class JobPostModel {
     this.skills = const [],
     this.languages = const [],
     this.mediaTypes = const [],
-    this.locations = const [],
+    this.jobLocationType = 'Remote',
     this.benefits = const [],
     this.tags = const [],
     this.categories = const [],
@@ -109,7 +109,7 @@ class JobPostModel {
       'skills': skills,
       'languages': languages,
       'mediaTypes': mediaTypes,
-      'locations': locations,
+      'jobLocationType': jobLocationType, // ✅
       'benefits': benefits,
       'tags': tags,
       'categories': categories,
@@ -154,7 +154,7 @@ class JobPostModel {
       skills: List<String>.from(data['skills'] ?? []),
       languages: List<String>.from(data['languages'] ?? []),
       mediaTypes: List<String>.from(data['mediaTypes'] ?? []),
-      locations: List<String>.from(data['locations'] ?? []),
+      jobLocationType: data['jobLocationType'] ?? 'Remote', // ✅
       benefits: List<String>.from(data['benefits'] ?? []),
       tags: List<String>.from(data['tags'] ?? []),
       categories: List<String>.from(data['categories'] ?? []),

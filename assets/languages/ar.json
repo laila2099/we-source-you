@@ -1,4 +1,11 @@
 {
 "hello": "مرحبا",
-"welcome": "أهلاً بعودتك"
+"welcome": "أهلاً بعودتك",
+"sign in": "تسجيل الدخول",
+"sign up": "إنشاء حساب",
+"home": "الرئيسية",
+"media market": "سوق الإعلام",
+"journalist": "صحفي",
+"jobs": "الوظائف",
+"Trusted by Leading Media Organizations": "موثوق به من قبل منظمات الإعلام الرائدة"
 }

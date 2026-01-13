@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:we_source_you/binding/app_binding.dart';
@@ -37,21 +38,56 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // تأكد من تهيئة الإضافات قبل أي شيء
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await GetStorage.init();
-  await TranslationService.init();
-
+  // Set up error handler BEFORE any initialization to catch errors early
   FlutterError.onError = (details) {
-    // هذا الخطأ تحديداً يحدث بسبب عدم مزامنة العناصر عند الـ Hot Restart
-    if (details.exceptionAsString().contains('_elements.contains(element)')) {
+    final errorMsg = details.exceptionAsString();
+
+    // Suppress known hot reload/restart issues
+    if (errorMsg.contains('_elements.contains(element)') ||
+        errorMsg.contains('mounted') ||
+        errorMsg.contains('Overlay') ||
+        errorMsg.contains('isDisposed') ||
+        errorMsg.contains('disposed EngineFlutterView') ||
+        errorMsg.contains('during a platform message response callback')) {
       debugPrint(
-        '>>> Flutter Framework Sync Issue ignored during Hot Restart.',
+        '⚠️ Flutter Framework Sync Issue (suppressed): ${details.exception}',
       );
       return;
     }
+
+    // Log platform message errors specifically
+    if (errorMsg.contains('platform message') ||
+        errorMsg.contains('completer') ||
+        details.library == 'services library') {
+      debugPrint('⚠️ Platform Message Error: ${details.exception}');
+      debugPrint('Stack: ${details.stack}');
+    }
+
     FlutterError.dumpErrorToConsole(details);
   };
+
+  try {
+    // Initialize services with proper error handling
+    debugPrint('Initializing Firebase...');
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    debugPrint('Initializing GetStorage...');
+    await GetStorage.init();
+
+    debugPrint('Initializing TranslationService...');
+    await TranslationService.init();
+
+    Stripe.publishableKey =
+        'pk_test_51SnFHz1Dv8O6TY1WKs4vlwOtNmkmTI6m5OSGeWptUhsPduqzhJzRcuVjKWbiOXrzjLjTSVo1ldr6mY6xLaUbTeGW00GCUFIMGN';
+
+    debugPrint('All services initialized successfully');
+  } catch (e, stackTrace) {
+    debugPrint('❌ Error during app initialization: $e');
+    debugPrint('Stack trace: $stackTrace');
+    // Continue anyway - the app might still work with partial initialization
+  }
 
   runApp(const MyApp());
 }

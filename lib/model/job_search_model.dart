@@ -60,8 +60,12 @@ class JobSearchModel {
       details: post.description,
       postedDate: post.startDate ?? DateTime.now(),
       salary: post.minSalary?.toDouble() ?? 0,
-      locationType: post.locations.isNotEmpty ? post.locations.first : 'Remote',
-      country: post.locations.isNotEmpty ? post.locations.first : 'Remote',
+      locationType: post.jobLocationType.isNotEmpty
+          ? post.jobLocationType
+          : 'Remote',
+      country: post.jobLocationType.isNotEmpty
+          ? post.jobLocationType
+          : 'Remote',
       mediaType: post.mediaTypes.isNotEmpty ? post.mediaTypes.first : 'Unknown',
       jobType: post.jobType,
     );

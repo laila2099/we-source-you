@@ -246,6 +246,8 @@ class SignUpController extends GetxController {
         'title': accountType.value == 'company'
             ? 'Company'
             : individualJob.value.trim(),
+        'country': country.value.trim(), // ✅ جديد
+        'city': city.value.trim(),
         'location': '${city.value.trim()}, ${country.value.trim()}',
         'rating': 0,
         'reviews': 0,

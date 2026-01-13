@@ -830,6 +830,32 @@ class _JobApplyState extends State<JobApply> {
       }
     }
 
+    Widget addSingleValue(String title, String value, IconData icon) {
+      if (value.isEmpty) return const SizedBox();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: Colors.grey),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Chip(label: Text(value)),
+          const SizedBox(height: 16),
+        ],
+      );
+    }
+
     void addInfo(String title, String value) {
       if (value.trim().isNotEmpty) {
         tiles.add(_infoTile(title, value));
@@ -843,7 +869,7 @@ class _JobApplyState extends State<JobApply> {
     addList("Skills", job.skills, Icons.sell);
     addList("Media Types", job.mediaTypes, Icons.work);
     addList("Languages", job.languages, Icons.language);
-    addList("Locations", job.locations, Icons.location_on);
+    addSingleValue("Location", job.jobLocationType, Icons.location_on);
     addList("Benefits", job.benefits, Icons.card_giftcard);
     addList("Categories", job.categories, Icons.category);
     addList("Tags", job.tags, Icons.tag);
@@ -1012,7 +1038,10 @@ class _JobApplyState extends State<JobApply> {
       final jobDoc = await _firestore.collection('jobs').doc(job.id).get();
       final ownerId = jobDoc.data()?['userId'];
 
+      final docRef = FirebaseFirestore.instance.collection('proposals').doc();
+
       final proposal = ProposalModel(
+        id: docRef.id,
         jobId: job.id!,
         userId: user.uid,
         jobOwnerId: ownerId,
@@ -1020,6 +1049,8 @@ class _JobApplyState extends State<JobApply> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
+
+      await docRef.set(proposal.toMap());
 
       final ref = await _firestore
           .collection('proposals')

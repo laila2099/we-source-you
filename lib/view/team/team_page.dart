@@ -1,7 +1,9 @@
+import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/view/team/team_controller/team_controller.dart';
+import 'package:we_source_you/view/team/widget/team_card.dart';
+import 'package:we_source_you/widgets/glass_morphism.dart';
 
 class TeamResultsList extends StatelessWidget {
   const TeamResultsList({super.key});
@@ -25,204 +27,11 @@ class TeamResultsList extends StatelessWidget {
           final member = team[index];
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: _TeamCardForList(member: member),
+            child: TeamCard(journalist: member),
           );
         },
       );
     });
-  }
-}
-
-class _TeamCardForList extends GetView<TeamController> {
-  final TeamModel member;
-  const _TeamCardForList({required this.member});
-
-  @override
-  Widget build(BuildContext context) {
-    final TextStyle nameStyle = Theme.of(context)
-        .textTheme
-        .bodyLarge!
-        .copyWith(fontWeight: FontWeight.bold, fontSize: 16);
-    final TextStyle titleStyle =
-        Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.grey);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: member.initialsColor,
-                child: Text(
-                  controller.avatarLetter(member),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(member.name, style: nameStyle),
-                    Text(member.title, style: titleStyle),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          size: 14,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          member.location,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Text(
-                          '${member.rating.toStringAsFixed(1)} ',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const Icon(Icons.star, color: Colors.amber, size: 16),
-                        Text(
-                          ' (${member.reviews} reviews)',
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            children: member.specialties
-                .map((tag) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: Text(
-                        tag,
-                        style: const TextStyle(fontSize: 12, color: Colors.black87),
-                      ),
-                    ))
-                .toList(),
-          ),
-          const SizedBox(height: 20),
-          const Divider(),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _StatColumn(count: member.projects, label: 'Projects'),
-              _StatColumn(count: member.clients, label: 'Clients'),
-              _StatColumn(count: member.years, label: 'Years'),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Divider(),
-          const SizedBox(height: 10),
-          _RateRow(label: 'Hourly', rate: member.hourlyRate),
-          _RateRow(label: 'Daily', rate: member.dailyRate),
-          _RateRow(label: 'Project', rate: member.projectRate),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => controller.viewProfile(member),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5CB85C),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              child: const Text(
-                'View Profile',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatColumn extends StatelessWidget {
-  final String count;
-  final String label;
-  const _StatColumn({required this.count, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          count,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-      ],
-    );
-  }
-}
-
-class _RateRow extends StatelessWidget {
-  final String label;
-  final String rate;
-  const _RateRow({required this.label, required this.rate});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(
-            rate,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -242,7 +51,6 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
 
   // Selections
   final Map<String, bool> _selectedSpecialties = {};
-  final Map<String, bool> _selectedLocations = {};
   String _selectedType = 'Any';
 
   // Controller
@@ -268,14 +76,7 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
     'Legal Consulting',
   ];
 
-  final List<String> _locations = [
-    'Belgium',
-    'China',
-    'USA',
-    'Germany',
-    'Egypt',
-    'Remote',
-  ];
+  String? _selectedCountry;
 
   final List<String> _types = [
     'Any',
@@ -290,10 +91,10 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        child: Container(
+        child: GlassContainer(
           width: MediaQuery.of(context).size.width * 0.85,
-          color: Colors.white,
-          padding: const EdgeInsets.all(16.0),
+          // color: Colors.white,
+          // padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -309,13 +110,13 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
               const SizedBox(height: 16),
 
               // Tabs
-              Row(
-                children: [
-                  _buildTab('Team'),
-                  const SizedBox(width: 8),
-                  _buildTab('Online Users'),
-                ],
-              ),
+              // Row(
+              //   children: [
+              //     _buildTab('Team'),
+              //     const SizedBox(width: 8),
+              //     _buildTab('Online Users'),
+              //   ],
+              // ),
               const SizedBox(height: 20),
 
               // Type Filter
@@ -349,19 +150,37 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
               const SizedBox(height: 20),
 
               // Locations Filter
-              _buildSectionTitle('Locations'),
-              _buildScrollableCheckboxList(_locations, _selectedLocations),
-              const SizedBox(height: 20),
-
-              // Specific Location
-              _buildSectionTitle('Specific Location'),
-              TextField(
-                controller: _locationController,
-                decoration: const InputDecoration(hintText: 'Add location...'),
+              _buildSectionTitle('Country'),
+              InkWell(
+                onTap: () {
+                  showCountryPicker(
+                    context: context,
+                    showPhoneCode: false,
+                    onSelect: (country) {
+                      setState(() {
+                        _selectedCountry = country.name;
+                      });
+                    },
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    _selectedCountry ?? 'Select country',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
               ),
+
               const SizedBox(height: 20),
 
-              // Rating Range
               _buildSectionTitle('Rating Range'),
               Row(
                 children: [
@@ -442,9 +261,7 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
           padding: const EdgeInsets.symmetric(vertical: 10),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFF337AB7)
-                : Colors.white,
+            color: isSelected ? const Color(0xFF337AB7) : Colors.white,
             border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(4),
           ),
@@ -522,7 +339,6 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
       _minRatingController.clear();
       _maxRatingController.clear();
       _selectedSpecialties.clear();
-      _selectedLocations.clear();
       _selectedType = 'Any';
     });
     controller.clearFilters();
@@ -534,18 +350,12 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
         .map((e) => e.key)
         .toList();
 
-    final selectedLocationsList = _selectedLocations.entries
-        .where((e) => e.value)
-        .map((e) => e.key)
-        .toList();
-
     controller.applyAdvancedFilters(
       type: _selectedType,
       specialties: selectedSpecialtiesList,
-      locations: selectedLocationsList,
+      country: _selectedCountry,
       minRating: double.tryParse(_minRatingController.text),
       maxRating: double.tryParse(_maxRatingController.text),
-      locationQuery: _locationController.text,
     );
 
     // Close dialog if this sidebar was opened as a dialog (mobile filter)
@@ -554,4 +364,3 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
     }
   }
 }
-

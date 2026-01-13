@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProposalModel {
-  String? id;
+  final String id;
   String jobId;
   String userId;
   String? jobOwnerId;
@@ -9,9 +9,10 @@ class ProposalModel {
   String status; // 'pending', 'approved', 'rejected'
   DateTime createdAt;
   DateTime? updatedAt;
+  String? amount;
 
   ProposalModel({
-    this.id,
+    required this.id,
     required this.jobId,
     required this.userId,
     this.jobOwnerId,
@@ -19,6 +20,7 @@ class ProposalModel {
     this.status = 'pending',
     required this.createdAt,
     this.updatedAt,
+    this.amount,
   });
 
   Map<String, dynamic> toMap() {

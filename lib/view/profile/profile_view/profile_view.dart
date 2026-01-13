@@ -639,6 +639,7 @@ import 'package:we_source_you/model/proposal_model.dart';
 //     });
 //   }
 // }
+
 class ProfileScreen extends StatelessWidget {
   ProfileScreen({super.key});
 
@@ -723,8 +724,6 @@ class ProfileScreen extends StatelessWidget {
 
   /// ---------------- PROFILE CONTENT ----------------
   Widget _buildProfileContent(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(child: CircularProgressIndicator());
@@ -847,6 +846,78 @@ class ProfileScreen extends StatelessWidget {
             }),
 
             const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            // ---------------- User Proposals ----------------
+            const Text(
+              "My Proposals",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('proposals')
+                  .where('userId', isEqualTo: controller.uid)
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      "Error loading proposals: ${snapshot.error}",
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        "You have not submitted any proposals yet.",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  );
+                }
+
+                final proposals = snapshot.data!.docs.map((doc) {
+                  try {
+                    return ProposalModel.fromMap(
+                      doc.data() as Map<String, dynamic>,
+                      doc.id,
+                    );
+                  } catch (e) {
+                    return ProposalModel(
+                      id: doc.id,
+                      jobId: '',
+                      userId: '',
+                      proposalText: 'Error loading proposal',
+                      createdAt: DateTime.now(),
+                    );
+                  }
+                }).toList();
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: proposals.length,
+                  itemBuilder: (context, index) {
+                    final proposal = proposals[index];
+                    return _buildUserProposalCard(proposal);
+                  },
+                );
+              },
+            ),
+
+            const SizedBox(height: 24),
           ],
         ),
       );
@@ -927,9 +998,9 @@ class ProfileScreen extends StatelessWidget {
                     label: Text(job.jobType),
                     backgroundColor: Colors.blue.shade50,
                   ),
-                  if (job.locations.isNotEmpty)
+                  if (job.jobLocationType.isNotEmpty)
                     Chip(
-                      label: Text(job.locations.first),
+                      label: Text(job.jobLocationType),
                       backgroundColor: Colors.green.shade50,
                     ),
                 ],
@@ -952,6 +1023,128 @@ class ProfileScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserProposalCard(ProposalModel proposal) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('jobs')
+              .doc(proposal.jobId)
+              .get(),
+          builder: (context, jobSnap) {
+            if (!jobSnap.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final jobData = jobSnap.data!.data() as Map<String, dynamic>?;
+            final jobTitle = jobData?['title'] ?? 'Unknown Job';
+            final jobImageUrl = jobData?['imageUrl'];
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (jobImageUrl != null && jobImageUrl.isNotEmpty)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          jobImageUrl,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.work,
+                          size: 30,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            jobTitle,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            proposal.proposalText,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: proposal.status == 'approved'
+                            ? Colors.green.shade100
+                            : proposal.status == 'rejected'
+                            ? Colors.red.shade100
+                            : Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        proposal.status.toUpperCase(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: proposal.status == 'approved'
+                              ? Colors.green.shade800
+                              : proposal.status == 'rejected'
+                              ? Colors.red.shade800
+                              : Colors.orange.shade800,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      DateFormat('MMM dd, yyyy').format(proposal.createdAt),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

@@ -316,4 +316,28 @@ class JobsController extends GetxController {
       Get.snackbar("Error", "Job details not found");
     }
   }
+
+  Stream<DocumentSnapshot> getJobStatusStream(String jobId) {
+    return FirebaseFirestore.instance
+        .collection('payments') // تأكد أن هذا هو اسم الكولكشن الذي يخزن الدفعات
+        .doc(jobId)
+        .snapshots();
+  }
+
+  // دالة لطلب "نزاع" أو "مشكلة" من قبل المستخدم
+  Future<void> requestDispute(String jobId, String reason) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('payments')
+          .doc(jobId)
+          .update({
+            'status': 'disputed',
+            'disputeReason': reason,
+            'disputeAt': FieldValue.serverTimestamp(),
+          });
+      Get.snackbar("Dispute", "Admin has been notified.");
+    } catch (e) {
+      Get.snackbar("Error", e.toString());
+    }
+  }
 }

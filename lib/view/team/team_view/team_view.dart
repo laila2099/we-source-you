@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:we_source_you/core/constant/app_color.dart';
 import 'package:we_source_you/view/team/team_controller/team_controller.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/view/team/team_page.dart';
@@ -37,9 +38,8 @@ class _TeamViewState extends State<TeamView> {
           icon: const Icon(Icons.arrow_back),
         ),
         title: const Text("Team Board"),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cream,
         foregroundColor: Colors.black,
-        elevation: 1,
       ),
 
       // Mobile drawer
@@ -57,9 +57,7 @@ class _TeamViewState extends State<TeamView> {
                   insetPadding: const EdgeInsets.all(24),
                   child: SizedBox(
                     width: 320,
-                    child: SingleChildScrollView(
-                      child: TeamFilterSidebar(),
-                    ),
+                    child: SingleChildScrollView(child: TeamFilterSidebar()),
                   ),
                 ),
               );
@@ -77,9 +75,7 @@ class _TeamViewState extends State<TeamView> {
                 if (isDesktop)
                   const SizedBox(
                     width: 320,
-                    child: SingleChildScrollView(
-                      child: TeamFilterSidebar(),
-                    ),
+                    child: SingleChildScrollView(child: TeamFilterSidebar()),
                   ),
 
                 if (isDesktop)
@@ -99,4 +95,3 @@ class _TeamViewState extends State<TeamView> {
     );
   }
 }
-

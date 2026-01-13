@@ -64,7 +64,7 @@ class JobsRepository {
       minSalary: (data['minSalary'] ?? 0).toDouble(),
       maxSalary: (data['maxSalary'] ?? 0).toDouble(),
       contactName: data['contactName'] ?? '',
-      locations: List<String>.from(data['locations'] ?? []),
+      jobLocationType: data['jobLocationType'] ?? 'Remote',
       mediaTypes: List<String>.from(data['mediaTypes'] ?? []),
       startDate: data['startDate'] != null
           ? DateTime.parse(data['startDate'])

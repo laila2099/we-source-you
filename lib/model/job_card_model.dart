@@ -28,7 +28,9 @@ class JobCardModel {
       details: post.description,
       postedDate: post.startDate ?? DateTime.now(),
       budgetRange: post.minSalary?.toDouble() ?? 0,
-      locationType: post.locations.isNotEmpty ? post.locations.first : 'Remote',
+      locationType: post.jobLocationType.isNotEmpty
+          ? post.jobLocationType
+          : 'Remote',
     );
   }
   factory JobCardModel.fromSearch(JobSearchModel job) {
