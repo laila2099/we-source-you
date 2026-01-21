@@ -89,13 +89,18 @@
 //     Get.snackbar("Apply", "Applying for ${job.title} at ${job.publisherName}");
 //   }
 // }
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/data/repositories/jobs_repository.dart';
 import 'package:we_source_you/model/job_card_model.dart';
 import 'package:we_source_you/model/job_post_model.dart';
 import 'package:we_source_you/model/job_search_model.dart';
 import 'package:we_source_you/routes/app_routes.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../../core/payments/payment_provider.dart';
+import '../../../core/services/payments/payment_service.dart';
+import '../../../core/services/payments/proposal_actions.dart';
+import '../../../core/services/payments/proposal_service.dart';
 
 class JobsController extends GetxController {
   final JobsRepository _repo = JobsRepository();
@@ -283,6 +288,59 @@ class JobsController extends GetxController {
     }
     return '?';
   }
+
+  Future<void> testJobContract(
+    String proposalId,
+    PaymentProvider provider,
+  ) async {
+    final actions = ProposalActions(ProposalService(), PaymentService());
+
+    await actions.acceptAndPayWeb(
+      proposalId: proposalId,
+      provider: provider,
+      baseUrl: 'http://localhost:62538',
+    );
+  }
+
+  /*  Future<void> testStripeJobContract(String contractId) async {
+    final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+
+    final res = await functions.httpsCallable('createCheckoutSession').call({
+      'context': 'jobContract',
+      'referenceId': contractId,
+      'successUrl': 'https://localhost:51405/#/home',
+      'cancelUrl': 'https://localhost:51405/#/home',
+    });
+
+    final data = Map<String, dynamic>.from(res.data);
+    final checkoutUrl = data['url'];
+
+    if (checkoutUrl == null) {
+      throw Exception('Stripe checkout url is null');
+    }
+
+    html.window.location.href = checkoutUrl;
+  }
+
+  Future<void> testPayPalJobContract(String contractId) async {
+    final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+
+    final res = await functions.httpsCallable('createPayPalOrder').call({
+      'context': 'jobContract',
+      'referenceId': contractId,
+      'returnUrl': 'http://localhost:51405/#/home',
+      'cancelUrl': 'http://localhost:51405/#/home',
+    });
+
+    final data = Map<String, dynamic>.from(res.data);
+    final approveUrl = data['approveUrl'];
+
+    if (approveUrl == null) {
+      throw Exception('PayPal approveUrl is null');
+    }
+
+    html.window.location.href = approveUrl;
+  }*/
 
   void applyForJob(JobCardModel job) {
     // Find the corresponding JobPostModel

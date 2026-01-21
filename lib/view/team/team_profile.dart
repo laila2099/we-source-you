@@ -311,14 +311,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:we_source_you/model/payment_models.dart';
-import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/core/constant/app_color.dart';
+import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/view/jobs/job_proposals/job_proposals_view.dart';
 import 'package:we_source_you/widgets/circular_icon/circular_icon.dart';
 import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
-import 'package:we_source_you/core/services/payment_controller.dart';
-import 'package:we_source_you/widgets/payment/payment_summary_sheet.dart';
 
 class TeamProfileView extends StatelessWidget {
   final TeamModel member;
@@ -376,11 +373,11 @@ class TeamProfileView extends StatelessWidget {
     // HireType hireType,
     double rate,
   ) {
-    if (!Get.isRegistered<PaymentController>()) {
+    /*   if (!Get.isRegistered<PaymentController>()) {
       Get.put(PaymentController());
     }
 
-    final paymentController = Get.find<PaymentController>();
+    final paymentController = Get.find<PaymentController>();*/
     final teamId = member.name;
 
     Get.bottomSheet(

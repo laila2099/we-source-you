@@ -1,38 +1,37 @@
 const admin = require('firebase-admin');
 admin.initializeApp();
+//
+//exports.acceptProposal = require('./proposals').acceptProposal;
+//
+//exports.createPaymentIntent = require('./payments').createPaymentIntent;
+//exports.stripeWebhook = require('./payments').stripeWebhook;
+//exports.ping = require('./debug').ping;
+//
+//exports.createCheckoutSession = require('./payments').createCheckoutSession;
+//exports.createPayPalOrder =
+//  require('./paypal/createPayPalOrder').createPayPalOrder;
+//
+//exports.paypalWebhook =
+//  require('./paypal/paypalWebhook').paypalWebhook;
+//
 
-// Stripe Functions
-exports.createStripeEscrow = require('./stripe').createStripeEscrow;
-exports.releaseStripePayment = require('./stripe').releaseStripePayment;
+exports.ping = require('./debug').ping;
 
-// PayPal Functions
-exports.createPaypalEscrow = require('./paypal').createPaypalEscrow;
-exports.capturePaypalAuthorization = require('./paypal').capturePaypalAuthorization;
-exports.releasePaypalPayment = require('./paypal').releasePaypalPayment;
+exports.createPaymentIntent = require('./payments').createPaymentIntent;
+exports.createCheckoutSession = require('./payments').createCheckoutSession;
+exports.stripeWebhook = require('./payments').stripeWebhook;
 
-// Webhook Handlers
-exports.stripeWebhook = require('./webhooks').stripeWebhook;
-exports.paypalWebhook = require('./webhooks').paypalWebhook;
+exports.createPayPalOrder = require('./paypal/createPayPalOrder').createPayPalOrder;
+exports.paypalWebhook = require('./paypal/paypalWebhook').paypalWebhook;
 
-// Refund & Dispute Functions
-exports.processFullRefund = require('./refunds').processFullRefund;
-exports.processPartialRefund = require('./refunds').processPartialRefund;
-exports.handleDispute = require('./refunds').handleDispute;
+exports.acceptProposal = require('./proposals').acceptProposal;
 
-// Payout Functions
-exports.processAutoPayout = require('./payouts').processAutoPayout;
-exports.autoPayoutAfterDisputePeriod = require('./payouts').autoPayoutAfterDisputePeriod;
+exports.submitDelivery = require('./contracts').submitDelivery;
+exports.approveDelivery = require('./contracts').approveDelivery;
+exports.confirmClose = require('./contracts').confirmClose;
+exports.releasePayout = require('./contracts').releasePayout;
 
-// Marketplace Payment Functions
-exports.createMediaPaymentIntent = require('./marketplace_payments').createMediaPaymentIntent;
-exports.createHiringPaymentIntent = require('./marketplace_payments').createHiringPaymentIntent;
-exports.createProposalPaymentIntent = require('./marketplace_payments').createProposalPaymentIntent;
-exports.createMediaPayPalOrder = require('./marketplace_payments').createMediaPayPalOrder;
-exports.createHiringPayPalOrder = require('./marketplace_payments').createHiringPayPalOrder;
-exports.createProposalPayPalOrder = require('./marketplace_payments').createProposalPayPalOrder;
-exports.capturePayPalPayment = require('./marketplace_payments').capturePayPalPayment;
 
-// Release payment functions (after work completion)
-exports.releaseMediaPayment = require('./release_marketplace_payments').releaseMediaPayment;
-exports.releaseHiringPayment = require('./release_marketplace_payments').releaseHiringPayment;
-exports.releaseProposalPayment = require('./release_marketplace_payments').releaseProposalPayment;
+exports.getDownloadUrl = require('./downloads').getDownloadUrl;
+
+

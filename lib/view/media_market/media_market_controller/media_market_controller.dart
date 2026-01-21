@@ -1,8 +1,15 @@
+import 'dart:html' as html;
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:we_source_you/model/category_item.dart';
 import 'package:we_source_you/model/media_item.dart';
+
+import '../../../core/payments/payment_context.dart';
+import '../../../core/payments/payment_provider.dart';
+import '../../../core/services/payments/payment_service.dart';
 
 class MediaController extends GetxController {
   final featuredMedia = <MediaItem>[].obs;
@@ -183,6 +190,53 @@ class MediaController extends GetxController {
 
     updateList(discoverMedia);
     updateList(featuredMedia);
+  }
+
+  ///  ---------------------- Payment ----------------------
+  Future<void> buy(String itemId, PaymentProvider provider) async {
+    final successUrl = 'http://localhost:62538/#/media';
+    final cancelUrl = 'http://localhost:62538/#/media';
+
+    print(itemId);
+
+    await PaymentService().startWebCheckout(
+      provider: provider,
+      context: PaymentContext.mediaMarket,
+      referenceId: itemId,
+      successUrl: successUrl,
+      cancelUrl: cancelUrl,
+    );
+
+    /* final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+    print(itemId);
+    // print(PaymentContext.mediaMarket.name);
+
+    final res = await functions.httpsCallable('createCheckoutSession').call({
+      'context': 'mediaMarket',
+      'referenceId': itemId,
+      'successUrl': 'http://localhost:62538/#/media',
+      'cancelUrl': 'http://localhost:62538/#/media',
+    });
+
+    final data = Map<String, dynamic>.from(res.data as Map);
+    final url = data['url'] as String?;
+    if (url == null || url.isEmpty) throw Exception('Missing checkout url');
+
+    html.window.location.href = url;*/
+  }
+
+  Future<void> downloadPurchase(String purchaseId) async {
+    final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+
+    final res = await functions.httpsCallable('getDownloadUrl').call({
+      'purchaseId': purchaseId,
+    });
+
+    final data = Map<String, dynamic>.from(res.data as Map);
+    final url = data['url'] as String?;
+    if (url == null || url.isEmpty) throw Exception('Missing signed url');
+
+    html.window.open(url, '_blank');
   }
 
   @override
