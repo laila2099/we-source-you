@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -8,17 +7,14 @@ import 'package:we_source_you/core/constant/text_style.dart';
 import 'package:we_source_you/routes/app_routes.dart';
 import 'package:we_source_you/view/auth/auth_controller/auth_controller.dart';
 import 'package:we_source_you/view/home/home_controller/home_controller.dart';
-import 'package:we_source_you/view/home/widgets/nav_drop.dart';
 import 'package:we_source_you/view/home/widgets/herosection.dart';
 import 'package:we_source_you/view/home/widgets/how_itworks.dart';
 import 'package:we_source_you/view/home/widgets/image_sider.dart';
-import 'package:we_source_you/view/jobs/widget/jobs_card.dart';
+import 'package:we_source_you/view/home/widgets/statistics.dart';
 import 'package:we_source_you/view/jobs/jobs_controller/jobs_controller.dart';
+import 'package:we_source_you/view/jobs/widget/jobs_card.dart';
 import 'package:we_source_you/view/team/team_controller/team_controller.dart';
 import 'package:we_source_you/view/team/widget/team_card.dart';
-import 'package:we_source_you/view/home/widgets/statistics.dart';
-import 'package:we_source_you/view/media_market/binding/media_binding.dart';
-import 'package:we_source_you/view/media_market/media_market_view/media_market_view.dart';
 // Removed unused import to avoid requiring MediaController before navigation
 import 'package:we_source_you/widgets/app_footer/app_footer.dart';
 import 'package:we_source_you/widgets/circular_icon/circular_icon.dart';
@@ -302,6 +298,8 @@ class HomeView extends StatelessWidget {
       onSelected: (value) {
         if (value == 'Profile') {
           Get.toNamed(AppRoutes.profile);
+        } else if (value == 'MyLibrary') {
+          Get.toNamed(AppRoutes.myLibrary);
         } else if (value == 'logout') {
           authController.logout();
           Get.offAllNamed(AppRoutes.home);
@@ -309,6 +307,7 @@ class HomeView extends StatelessWidget {
       },
       itemBuilder: (context) => [
         const PopupMenuItem(value: 'Profile', child: Text('Profile')),
+        const PopupMenuItem(value: 'MyLibrary', child: Text('My Library')),
         const PopupMenuItem(value: 'logout', child: Text('Logout')),
       ],
       child: Obx(() {

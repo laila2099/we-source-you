@@ -7,6 +7,8 @@ import 'package:we_source_you/view/jobs/jobs_controller/jobs_controller.dart';
 import 'package:we_source_you/widgets/circular_icon/Circular_icon.dart';
 import 'package:we_source_you/widgets/glass_morphism.dart';
 
+import '../../../widgets/payment_method_dialog.dart';
+
 class FeaturedJobsView extends StatelessWidget {
   FeaturedJobsView({super.key});
   final JobsController controller = Get.find<JobsController>();
@@ -179,7 +181,25 @@ class JobCard extends GetView<JobsController> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => controller.applyForJob(job),
+              onPressed: () async {
+                // controller.applyForJob(job);
+                // await controller.testPayPalJobContract("wIpTircg9WVOpg4Izcv5");
+                final provider = await showPaymentMethodDialog(context);
+                if (provider == null) return; // user closed dialog
+
+                await controller.testJobContract(
+                  "93vVf8T8fa10qZeX9D4b",
+                  provider,
+                );
+
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (_) =>
+                //         ChatPage(conversationId: "dGSDfbFgljZ1UxDevbvZ"),
+                //   ),
+                // );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.lightBlue,
                 foregroundColor: Colors.white,

@@ -1,4 +1,6 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get/get.dart';
@@ -9,8 +11,6 @@ import 'package:we_source_you/core/services/translation_service.dart';
 import 'package:we_source_you/firebase_options.dart';
 import 'package:we_source_you/routes/app_pages.dart';
 import 'package:we_source_you/routes/app_routes.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 
 // void main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
@@ -80,7 +80,7 @@ void main() async {
     await TranslationService.init();
 
     Stripe.publishableKey =
-        'pk_test_51SnFHz1Dv8O6TY1WKs4vlwOtNmkmTI6m5OSGeWptUhsPduqzhJzRcuVjKWbiOXrzjLjTSVo1ldr6mY6xLaUbTeGW00GCUFIMGN';
+        'pk_test_51SpwZTCQW8mXVTllBaVKzHUihCZtfYeEoptVYBArjicVUDWeG8AoCbX8eGLaFgD4qm8NOYoOxlgqCRpCPGPJlGTr00wsUO8qhL';
 
     debugPrint('All services initialized successfully');
   } catch (e, stackTrace) {
@@ -88,6 +88,8 @@ void main() async {
     debugPrint('Stack trace: $stackTrace');
     // Continue anyway - the app might still work with partial initialization
   }
+
+  await Stripe.instance.applySettings();
 
   runApp(const MyApp());
 }

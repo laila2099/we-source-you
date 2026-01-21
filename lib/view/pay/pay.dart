@@ -119,11 +119,9 @@
 // }
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:we_source_you/core/services/payment_controller.dart';
-import 'package:we_source_you/model/payment_models.dart';
 
 class JobPaymentScreen extends StatelessWidget {
-  final PaymentController controller = Get.put(PaymentController());
+  // final PaymentController controller = Get.put(PaymentController());
 
   // Variables passed from previous screen
   final String proposalId = "prop_123";
@@ -135,18 +133,18 @@ class JobPaymentScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text("Secure Payment")),
       body: Obx(() {
-        if (controller.isLoading.value) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 20),
-                Text(controller.statusMessage.value),
-              ],
-            ),
-          );
-        }
+        // if (controller.isLoading.value) {
+        //   return Center(
+        //     child: Column(
+        //       mainAxisAlignment: MainAxisAlignment.center,
+        //       children: [
+        //         CircularProgressIndicator(),
+        //         SizedBox(height: 20),
+        //         Text(controller.statusMessage.value),
+        //       ],
+        //     ),
+        //   );
+        // }
 
         return Padding(
           padding: const EdgeInsets.all(20.0),
@@ -173,7 +171,7 @@ class JobPaymentScreen extends StatelessWidget {
                   padding: EdgeInsets.all(20),
                 ),
                 onPressed: () async {
-                  PaymentResult result = await controller
+                  /*   PaymentResult result = await controller
                       .initiateMarketplacePayment(
                         type: MarketItemType.proposal,
                         method: PaymentMethod.stripe,
@@ -185,7 +183,7 @@ class JobPaymentScreen extends StatelessWidget {
                   if (result.success) {
                     // Navigate to Chat Screen or wait for Firestore Listener to update UI
                     Get.offNamed('/chat', arguments: {'jobId': jobId});
-                  }
+                  }*/
                 },
               ),
 
@@ -200,7 +198,7 @@ class JobPaymentScreen extends StatelessWidget {
                   padding: EdgeInsets.all(20),
                 ),
                 onPressed: () async {
-                  PaymentResult result = await controller
+                  /*    PaymentResult result = await controller
                       .initiateMarketplacePayment(
                         type: MarketItemType.proposal,
                         method: PaymentMethod.paypal,
@@ -211,7 +209,7 @@ class JobPaymentScreen extends StatelessWidget {
 
                   if (result.success) {
                     Get.offNamed('/chat', arguments: {'jobId': jobId});
-                  }
+                  }*/
                 },
               ),
             ],
