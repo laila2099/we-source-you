@@ -108,12 +108,6 @@ class _AnimatedCarouselState extends State<AnimatedCarousel>
 
     // Start Immediately
     textController.forward();
-
-    // AUTO SLIDE
-    // autoTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-    //   textController.reset();
-    //   textController.forward();
-    // });
   }
 
   @override

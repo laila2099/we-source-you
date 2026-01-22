@@ -9,56 +9,6 @@ import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/core/constant/text_style.dart';
 import 'package:we_source_you/core/constant/app_color.dart';
 
-/// -----------------------------------------------
-/// ✅ Stats Grid View
-/// -----------------------------------------------
-// class StatsGridView extends GetView<HomeController> {
-//   const StatsGridView({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final controller = Get.find<HomeController>();
-//     final padding = ResponsiveLayout.screenPadding(context);
-
-//     return Container(
-//       padding: padding,
-//       color: AppColors.darkBg,
-//       child: Column(
-//         children: [
-//           // Title
-//           Text(
-//             'Connect with thousands of media professionals and companies worldwide'
-//                 .tr,
-//             textAlign: TextAlign.center,
-//             style: AppTextStyles.h4(context).copyWith(color: Colors.white),
-//           ),
-//           SizedBox(height: 50.h),
-
-//           // Responsive Wrap Grid
-//           Obx(() {
-//             return Wrap(
-//               spacing: 20,
-//               runSpacing: 20,
-//               alignment: WrapAlignment.center,
-//               children: [
-//                 for (final item in controller.stats)
-//                   SizedBox(
-//                     width: ResponsiveLayout.isDesktop(context)
-//                         ? 320
-//                         : ResponsiveLayout.isTablet(context)
-//                         ? 280
-//                         : MediaQuery.of(context).size.width * 0.9,
-//                     child: _StatBox(item: item),
-//                   ),
-//               ],
-//             );
-//           }),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 class _StatBox extends StatelessWidget {
   final StatisticItem item;
   const _StatBox({required this.item});

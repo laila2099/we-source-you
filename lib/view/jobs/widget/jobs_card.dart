@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/core/constant/app_color.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
+import 'package:we_source_you/core/constant/text_style.dart';
 import 'package:we_source_you/model/job_card_model.dart';
 import 'package:we_source_you/view/jobs/jobs_controller/jobs_controller.dart';
 import 'package:we_source_you/widgets/circular_icon/Circular_icon.dart';
@@ -113,6 +115,7 @@ class JobCard extends GetView<JobsController> {
                   ),
                 ),
               ),
+              SizedBox(width: 15.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,6 +126,7 @@ class JobCard extends GetView<JobsController> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+
                     Row(
                       children: [
                         const Icon(
@@ -148,6 +152,11 @@ class JobCard extends GetView<JobsController> {
                   ],
                 ),
               ),
+              _StatColumn(
+                label: 'Posted',
+                count:
+                    '${job.postedDate.day}/${job.postedDate.month}/${job.postedDate.year}',
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -166,14 +175,35 @@ class JobCard extends GetView<JobsController> {
           const SizedBox(height: 10),
 
           // Stats (e.g., Posted Date, Contract)
-          _StatColumn(
-            count:
-                '${job.postedDate.day}/${job.postedDate.month}/${job.postedDate.year}',
-            label: 'Posted',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _StatColumn(
+                label: 'Start Date',
+                count: job.startDate != null
+                    ? '${job.startDate!.day}/${job.startDate!.month}/${job.startDate!.year}'
+                    : 'N/A',
+              ),
+              _StatColumn(
+                label: 'End Date',
+                count: job.endDate != null
+                    ? '${job.endDate!.day}/${job.endDate!.month}/${job.endDate!.year}'
+                    : 'N/A',
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           const Divider(),
           const SizedBox(height: 10),
+          Text(
+            job.details,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 20),
 
           // Apply Button
           SizedBox(
@@ -210,11 +240,13 @@ class _StatColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        Text(label, style: AppTextStyles.bodyBold(context)),
+        const SizedBox(width: 4),
+
         Text(
           count,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
       ],
     );
   }

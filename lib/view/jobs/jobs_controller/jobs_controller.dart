@@ -1,96 +1,5 @@
-// import 'package:get/get.dart';
-// import 'package:we_source_you/data/repositories/jobs_repository.dart';
-// import 'package:we_source_you/model/job_card_model.dart';
-// import 'package:we_source_you/model/job_post_model.dart';
-// import 'package:we_source_you/model/job_search_model.dart';
-
-// class JobsController extends GetxController {
-//   final JobsRepository _repo = JobsRepository();
-//   final featuredJobs = <JobCardModel>[].obs;
-
-//   var allPosts = <JobPostModel>[].obs;
-//   var jobsForCard = <JobCardModel>[].obs;
-//   var jobsForSearch = <JobSearchModel>[].obs;
-//   var isLoading = false.obs;
-
-//   @override
-//   void onInit() {
-//     super.onInit();
-//     fetchAllJobs();
-//   }
-
-//   Future<void> fetchAllJobs() async {
-//     try {
-//       isLoading.value = true;
-
-//       // 1️⃣ Fetch all posts
-//       final posts = await _repo.fetchJobs();
-//       allPosts.value = posts;
-
-//       // 2️⃣ Map to card models for UI
-//       jobsForCard.value = posts.map((p) => JobCardModel.fromPost(p)).toList();
-
-//       // 3️⃣ Map to search models for filtering
-//       jobsForSearch.value = posts
-//           .map((p) => JobSearchModel.fromPost(p))
-//           .toList();
-
-//       // 4️⃣ Take first 4 for featured jobs
-//       featuredJobs.assignAll(
-//         posts.take(4).map((p) => JobCardModel.fromPost(p)).toList(),
-//       );
-//     } finally {
-//       isLoading.value = false;
-//     }
-//   }
-
-//   List<JobSearchModel> filterJobs({
-//     String? title,
-//     String? jobType,
-//     int? minSalary,
-//     List<String>? countries,
-//     List<String>? mediaTypes,
-//   }) {
-//     return jobsForSearch.where((job) {
-//       if (title != null && title.isNotEmpty && !job.title.contains(title)) {
-//         return false;
-//       }
-//       if (jobType != null && jobType != 'Any' && job.jobType != jobType) {
-//         return false;
-//       }
-//       if (minSalary != null && job.salary < minSalary) {
-//         return false;
-//       }
-//       if (countries != null &&
-//           countries.isNotEmpty &&
-//           !countries.contains(job.country)) {
-//         return false;
-//       }
-//       if (mediaTypes != null &&
-//           mediaTypes.isNotEmpty &&
-//           !mediaTypes.contains(job.mediaType)) {
-//         return false;
-//       }
-//       return true;
-//     }).toList();
-//   }
-
-//   void goBack() => Get.back();
-
-//   void viewMoreJobs() => Get.toNamed('/all-jobs');
-//   String avatarLetter(JobCardModel job) {
-//     if (job.publisherName.isNotEmpty) {
-//       return job.publisherName[0].toUpperCase();
-//     }
-//     return '?';
-//   }
-
-//   void applyForJob(JobCardModel job) {
-//     Get.snackbar("Apply", "Applying for ${job.title} at ${job.publisherName}");
-//   }
-// }
 import 'package:get/get.dart';
-import 'package:we_source_you/data/repositories/jobs_repository.dart';
+import 'package:we_source_you/core/repository/jobs_repository.dart';
 import 'package:we_source_you/model/job_card_model.dart';
 import 'package:we_source_you/model/job_post_model.dart';
 import 'package:we_source_you/model/job_search_model.dart';
@@ -285,35 +194,11 @@ class JobsController extends GetxController {
   }
 
   void applyForJob(JobCardModel job) {
-    // Find the corresponding JobPostModel
-    JobPostModel? jobPost;
-
-    if (job.id != null) {
-      // Try to find by id first
-      try {
-        jobPost = allPosts.firstWhere((post) => post.id == job.id);
-      } catch (e) {
-        // Not found by id, continue to search by other fields
-      }
-    }
-
-    // If not found by id, try to match by title and publisher name
-    if (jobPost == null) {
-      try {
-        jobPost = allPosts.firstWhere(
-          (post) =>
-              post.title == job.title && post.contactName == job.publisherName,
-        );
-      } catch (e) {
-        // Not found
-      }
-    }
-
-    if (jobPost != null) {
-      // Navigate to job apply page with the job details
-      Get.toNamed(AppRoutes.applyJob, arguments: jobPost);
+    if (job.id != null && job.id!.isNotEmpty) {
+      // مرر الـ ID فقط كـ String
+      Get.toNamed(AppRoutes.applyJob, arguments: job.id);
     } else {
-      Get.snackbar("Error", "Job details not found");
+      Get.snackbar("Error", "Job ID is missing");
     }
   }
 

@@ -31,6 +31,7 @@
 
   <title>we_source_you</title>
   <link rel="manifest" href="manifest.json">
+  
 </head>
 <body>
 
@@ -54,9 +55,31 @@
     firebase.initializeApp(firebaseConfig);
     firebase.analytics();
   </script>
+  <!-- مكان الـ Div لكريب Sumsub -->
+<div id="sumsub-websdk-container"></div>
 
-  <!-- Flutter bootstrap -->
-  <script src="flutter_bootstrap.js" async></script>
+<script src="https://static.sumsub.com/idensic/static/sns-websdk-builder.js"></script>
+<script>
+  window.launchSumsub = function (token) {
+    if (!window.snsWebSdk) {
+      console.error('Sumsub SDK not loaded');
+      return;
+    }
+
+    const sdk = window.snsWebSdk
+      .init(token)
+      .withConf({
+        lang: 'en',
+        theme: 'light',
+      })
+      .build();
+
+    sdk.launch('#sumsub-websdk-container');
+  };
+</script>
+
+<script defer src="flutter_bootstrap.js"></script>
+
 
 </body>
 </html>

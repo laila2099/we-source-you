@@ -76,16 +76,9 @@ class _JobFilterSidebarState extends State<JobFilterSidebar> {
 
     // Convert JobSearchModel → JobCardModel directly
     controller.featuredJobs.assignAll(
-      filteredJobs.map((jobSearch) {
-        return JobCardModel(
-          title: jobSearch.title,
-          publisherName: jobSearch.publisherName,
-          details: jobSearch.details,
-          postedDate: jobSearch.postedDate,
-          budgetRange: jobSearch.salary.toDouble(),
-          locationType: jobSearch.locationType,
-        );
-      }).toList(),
+      filteredJobs
+          .map((jobSearch) => JobCardModel.fromSearch(jobSearch))
+          .toList(),
     );
   }
 

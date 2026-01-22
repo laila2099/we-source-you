@@ -4,34 +4,34 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:we_source_you/routes/app_routes.dart';
 
 class AuthController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final box = GetStorage();
 
   Rxn<User> firebaseUser = Rxn<User>();
-
   RxBool isLoggedIn = false.obs;
+
+  RxString role = 'user'.obs;
+  RxString accountType = ''.obs;
+
   RxString country = ''.obs;
   RxString city = ''.obs;
   RxString phone = ''.obs;
 
-  bool rememberMe = false;
-  RxString accountType = ''.obs; // individual | company
-
-  // ---------------------------
-  // Individual data
-  // ---------------------------
+  // Individual
   RxString fullName = ''.obs;
-  RxString mediaWorkType = ''.obs;
+  RxList<String> mediaWorkTypes = <String>[].obs;
   RxString analystSpecialty = ''.obs;
   RxString socialLinks = ''.obs;
 
-  // ---------------------------
-  // Company data
-  // ---------------------------
+  // Company
   RxString companyName = ''.obs;
   RxString website = ''.obs;
+
+  bool rememberMe = false;
 
   @override
   void onInit() {
@@ -43,229 +43,186 @@ class AuthController extends GetxController {
   // Initialization
   // ---------------------------
   Future<void> _initAuth() async {
-    // 1️⃣ Read Remember Me from local storage
     rememberMe = box.read('rememberMe') ?? false;
 
-    // 2️⃣ Set persistence **قبل** أي auth check
     try {
       await _auth.setPersistence(
         rememberMe ? Persistence.LOCAL : Persistence.SESSION,
       );
     } catch (e) {
-      print('⚠️ Error setting persistence: $e');
+      debugPrint('⚠️ Persistence error: $e');
     }
 
-    // 3️⃣ Bind auth state changes
+    // Bind auth state
     firebaseUser.bindStream(_auth.authStateChanges());
 
     ever(firebaseUser, (User? user) async {
       if (user == null) {
-        isLoggedIn.value = false;
-
-        country.value = '';
-        city.value = '';
-        phone.value = '';
-      } else {
-        isLoggedIn.value = true;
-        await _loadUserData(user.uid);
+        _clearState();
+        return;
       }
+
+      isLoggedIn.value = true;
+
+      await _loadUserData(user.uid);
+
+      _handlePostLoginRouting();
     });
 
-    // 4️⃣ Force check current user
-    final user = _auth.currentUser;
-    if (user != null) {
-      firebaseUser.value = user;
-    }
-
-    // 5️⃣ Load any locally stored data
-
-    country.value = box.read('country') ?? country.value;
-    city.value = box.read('city') ?? city.value;
-    phone.value = box.read('phone') ?? phone.value;
-    accountType.value = box.read('accountType') ?? accountType.value;
-
-    fullName.value = box.read('fullName') ?? fullName.value;
-    mediaWorkType.value = box.read('mediaWorkType') ?? mediaWorkType.value;
-    analystSpecialty.value =
-        box.read('analystSpecialty') ?? analystSpecialty.value;
-    socialLinks.value = box.read('socialLinks') ?? socialLinks.value;
-
-    companyName.value = box.read('companyName') ?? companyName.value;
-    website.value = box.read('website') ?? website.value;
+    // Load cached data for quick UI update
+    _loadLocalCache();
   }
 
   // ---------------------------
-  // Load user data from Firestore & store locally
+  // Manual refresh auth state
   // ---------------------------
-  Future<void> _loadUserData(String uid) async {
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
-      if (doc.exists) {
-        final data = doc.data() ?? <String, dynamic>{};
-
-        country.value = data['country']?.toString() ?? '';
-        city.value = data['city']?.toString() ?? '';
-        phone.value = data['phone']?.toString() ?? '';
-        accountType.value = data['type']?.toString() ?? 'individual';
-
-        // ---------------------------
-        // Individual
-        // ---------------------------
-        fullName.value = data['fullName']?.toString() ?? '';
-        mediaWorkType.value = data['mediaWorkType']?.toString() ?? '';
-        analystSpecialty.value = data['analystSpecialty']?.toString() ?? '';
-        socialLinks.value = data['socialLinks']?.toString() ?? '';
-
-        // ---------------------------
-        // Company
-        // ---------------------------
-        companyName.value =
-            data['companyName']?.toString() ?? data['name']?.toString() ?? '';
-        website.value = data['website']?.toString() ?? '';
-
-        // حفظ محليًا لضمان persistence بعد stop/run
-
-        await box.write('country', country.value);
-        await box.write('city', city.value);
-        await box.write('phone', phone.value);
-        await box.write('accountType', accountType.value);
-
-        await box.write('fullName', fullName.value);
-        await box.write('mediaWorkType', mediaWorkType.value);
-        await box.write('analystSpecialty', analystSpecialty.value);
-        await box.write('socialLinks', socialLinks.value);
-
-        await box.write('companyName', companyName.value);
-        await box.write('website', website.value);
-      }
-    } catch (e) {
-      print('⚠️ Error fetching user data: $e');
-    }
-  }
-
-  Future<UserCredential?> signInWithGoogle() async {
-    try {
-      // Use named constructor
-      final GoogleSignIn googleSignIn = GoogleSignIn.standard(
-        scopes: ['email', 'profile'],
-      );
-
-      // Start the sign-in flow
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) return null; // user canceled
-
-      // Obtain the ID token (Web only requires idToken)
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken, // ✅ accessToken is no longer needed
-      );
-
-      // Sign in to Firebase
-      return await _auth.signInWithCredential(credential);
-    } catch (e) {
-      print('Google Sign-In Error: $e');
-      rethrow;
-    }
-  }
-
-  // ---------------------------
-  // Manual check & update auth state
-  // ---------------------------
-  Future<void> _checkAuthState() async {
+  Future<void> refreshAuthState() async {
     final user = _auth.currentUser;
     if (user != null) {
       firebaseUser.value = user;
       isLoggedIn.value = true;
       await _loadUserData(user.uid);
+      _handlePostLoginRouting();
     } else {
-      isLoggedIn.value = false;
-
-      country.value = '';
-      city.value = '';
-      phone.value = '';
+      _clearState();
     }
   }
 
   // ---------------------------
-  // Public method to refresh auth state
+  // Load user data from Firestore
   // ---------------------------
-  Future<void> refreshAuthState() async {
-    await _checkAuthState();
+  Future<void> _loadUserData(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (!doc.exists) return;
+
+      final data = doc.data()!;
+
+      role.value = data['role'] ?? 'user';
+      accountType.value = data['type'] ?? 'individual';
+
+      country.value = data['country']?.toString() ?? '';
+      city.value = data['city']?.toString() ?? '';
+      phone.value = data['phone']?.toString() ?? '';
+
+      fullName.value = data['fullName']?.toString() ?? '';
+      mediaWorkTypes.assignAll(
+        data['mediaWorkTypes'] != null
+            ? List<String>.from(data['mediaWorkTypes'])
+            : [],
+      );
+      analystSpecialty.value = data['analystSpecialty']?.toString() ?? '';
+      socialLinks.value = data['socialLinks']?.toString() ?? '';
+
+      companyName.value =
+          data['companyName']?.toString() ?? data['name']?.toString() ?? '';
+      website.value = data['website']?.toString() ?? '';
+
+      // Cache locally
+      await box.write('role', role.value);
+      await box.write('accountType', accountType.value);
+      await box.write('country', country.value);
+      await box.write('city', city.value);
+      await box.write('phone', phone.value);
+      await box.write('fullName', fullName.value);
+      await box.write('mediaWorkTypes', mediaWorkTypes.toList());
+      await box.write('analystSpecialty', analystSpecialty.value);
+      await box.write('socialLinks', socialLinks.value);
+      await box.write('companyName', companyName.value);
+      await box.write('website', website.value);
+    } catch (e) {
+      debugPrint('⚠️ Firestore load error: $e');
+    }
+  }
+
+  // ---------------------------
+  // Google Sign-In
+  // ---------------------------
+  Future<UserCredential?> signInWithGoogle() async {
+    final googleSignIn = GoogleSignIn.standard(scopes: ['email', 'profile']);
+
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) return null;
+
+    final googleAuth = await googleUser.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      idToken: googleAuth.idToken,
+    );
+
+    return await _auth.signInWithCredential(credential);
+  }
+
+  // ---------------------------
+  // Routing
+  // ---------------------------
+  void _handlePostLoginRouting() {
+    if (!isLoggedIn.value) return;
+
+    if (role.value == 'admin') {
+      Get.offAllNamed(AppRoutes.adminDashboard);
+    } else {
+      Get.offAllNamed(AppRoutes.home);
+    }
   }
 
   // ---------------------------
   // Logout
   // ---------------------------
-  void logout() async {
+  Future<void> logout() async {
     await _auth.signOut();
+    await box.erase();
+    _clearState();
+    Get.offAllNamed(AppRoutes.signin);
+  }
+
+  // ---------------------------
+  // Helpers
+  // ---------------------------
+  void _clearState() {
     isLoggedIn.value = false;
+    role.value = 'user';
+    accountType.value = '';
 
     country.value = '';
     city.value = '';
     phone.value = '';
-    accountType.value = '';
+
     fullName.value = '';
-    mediaWorkType.value = '';
+    mediaWorkTypes.clear();
     analystSpecialty.value = '';
-    socialLinks.value = '';
+    // socialLinks.clear();
+
     companyName.value = '';
     website.value = '';
-
-    await box.remove('accountType');
-    await box.remove('fullName');
-    await box.remove('mediaWorkType');
-    await box.remove('analystSpecialty');
-    await box.remove('socialLinks');
-    await box.remove('companyName');
-    await box.remove('website');
-
-    // مسح البيانات المحلية عند logout
-    await box.remove('firstName');
-    await box.remove('lastName');
-    await box.remove('country');
-    await box.remove('city');
-    await box.remove('phone');
-    await box.remove('rememberMe');
   }
 
-  // ---------------------------
-  // Check auth before sensitive actions
-  // ---------------------------
-  bool checkAuthForAction() {
-    if (!isLoggedIn.value) {
-      Get.snackbar(
-        "Authentication Required",
-        "You must be signed in to perform this action.",
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-      );
-      return false;
+  void _loadLocalCache() {
+    role.value = box.read('role') ?? role.value;
+    accountType.value = box.read('accountType') ?? accountType.value;
+    country.value = box.read('country') ?? '';
+    city.value = box.read('city') ?? '';
+    phone.value = box.read('phone') ?? '';
+    fullName.value = box.read('fullName') ?? '';
+    analystSpecialty.value = box.read('analystSpecialty') ?? '';
+    socialLinks.value = box.read('socialLinks') ?? '';
+    companyName.value = box.read('companyName') ?? '';
+    website.value = box.read('website') ?? '';
+
+    final storedTypes = box.read('mediaWorkTypes');
+    if (storedTypes != null) {
+      mediaWorkTypes.assignAll(List<String>.from(storedTypes));
     }
-    return true;
   }
 
   // ---------------------------
-  // Avatar letter
+  // Avatar Letter
   // ---------------------------
   String get avatarLetter {
-    String nameToUse = '';
+    final name = accountType.value == 'company'
+        ? companyName.value
+        : fullName.value;
 
-    if (accountType.value == 'company' && companyName.value.trim().isNotEmpty) {
-      nameToUse = companyName.value.trim();
-    } else if (fullName.value.trim().isNotEmpty) {
-      nameToUse = fullName.value.trim();
-    }
-
-    if (nameToUse.isNotEmpty) {
-      return nameToUse[0].toUpperCase();
-    }
-
-    return '?';
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
   }
 }

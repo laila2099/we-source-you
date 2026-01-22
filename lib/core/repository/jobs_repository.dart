@@ -56,19 +56,8 @@ class JobsRepository {
   }
 
   JobPostModel _mapDoc(String id, Map<String, dynamic> data) {
-    return JobPostModel(
-      id: id,
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      jobType: data['jobType'] ?? 'Freelance',
-      minSalary: (data['minSalary'] ?? 0).toDouble(),
-      maxSalary: (data['maxSalary'] ?? 0).toDouble(),
-      contactName: data['contactName'] ?? '',
-      jobLocationType: data['jobLocationType'] ?? 'Remote',
-      mediaTypes: List<String>.from(data['mediaTypes'] ?? []),
-      startDate: data['startDate'] != null
-          ? DateTime.parse(data['startDate'])
-          : null,
-    );
+    // نضيف الـ id للـ data map قبل إرسالها
+    data['id'] = id;
+    return JobPostModel.fromMap(data);
   }
 }

@@ -33,24 +33,39 @@ class SignUpForm extends GetView<SignUpController> {
             SizedBox(height: 30.h),
 
             /// Brand
-            Text(
-              'WeSourceYou',
-              style: AppTextStyles.h1(
-                context,
-              ).copyWith(color: theme.textTheme.headlineLarge?.color),
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: "We",
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  TextSpan(
+                    text: "Source",
+                    style: AppTextStyles.h3(context).copyWith(
+                      foreground: Paint()
+                        ..shader = const LinearGradient(
+                          colors: [Color(0xff7ab9e4), Color(0xff0c5596)],
+                        ).createShader(const Rect.fromLTWH(0, 0, 200, 50)),
+                    ),
+                  ),
+                  TextSpan(
+                    text: "You",
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ],
+              ),
             ),
             SizedBox(height: 5.h),
-            Text(
+            const Text(
               'Media Talent',
-              style: AppTextStyles.body(context).copyWith(color: Colors.grey),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             SizedBox(height: 20.h),
 
             Text(
-              'Create Your Account',
-              style: AppTextStyles.h2(
-                context,
-              ).copyWith(color: theme.textTheme.headlineMedium?.color),
+              'Create your account'.tr,
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10.h),
             GoogleSignInButton(),
@@ -137,10 +152,6 @@ class SignUpForm extends GetView<SignUpController> {
             SizedBox(height: 20.h),
 
             /// City
-            CustomTextField(
-              labelText: 'City',
-              onChanged: (value) => controller.city.value = value,
-            ),
             SizedBox(height: 30.h),
 
             /// ---------------- COMPANY FIELDS ----------------
@@ -217,12 +228,27 @@ class SignUpForm extends GetView<SignUpController> {
                   DropdownMenuItem(value: "Translator", child: Text("مترجم")),
                   DropdownMenuItem(value: "Analyst", child: Text("محلل")),
                 ],
+                // onChanged: (value) {
+                //   controller.individualJob.value = value ?? '';
+                //   if (value != "Analyst") {
+                //     controller.analystSpecialty.value = '';
+                //   }
+                // },
                 onChanged: (value) {
                   controller.individualJob.value = value ?? '';
+
+                  // Clear analyst specialty if not Analyst
                   if (value != "Analyst") {
                     controller.analystSpecialty.value = '';
                   }
+
+                  // ✅ Add to mediaWorkTypes if not already there
+                  if (value != null &&
+                      !controller.mediaWorkTypes.contains(value)) {
+                    controller.mediaWorkTypes.add(value);
+                  }
                 },
+
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: "Select your job",
@@ -267,10 +293,6 @@ class SignUpForm extends GetView<SignUpController> {
 
               SizedBox(height: 20.h),
 
-              CustomTextField(
-                labelText: 'Social Account Links (optional)',
-                onChanged: (val) => controller.socialLinks.value = val,
-              ),
               SizedBox(height: 20.h),
             ],
 
@@ -284,13 +306,14 @@ class SignUpForm extends GetView<SignUpController> {
 
             /// Terms
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center, // بدل start
               children: [
                 Checkbox(
                   value: controller.agreedToTerms.value,
-                  onChanged: controller.agreedToTerms,
+                  onChanged: (val) => controller.agreedToTerms.value = val!,
                   activeColor: AppColors.darkBlue,
                 ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     "I agree to the Terms of Service & Privacy Policy",

@@ -6,9 +6,10 @@ import 'package:we_source_you/model/payment_models.dart';
 import 'package:we_source_you/model/proposal_model.dart';
 import 'package:intl/intl.dart';
 import 'package:we_source_you/model/team_model.dart';
+import 'package:we_source_you/view/jobs/job_proposals/widgets/helper.dart';
+import 'package:we_source_you/view/jobs/job_proposals/widgets/status_chip.dart';
 import 'package:we_source_you/view/team/team_profile.dart';
 import 'package:we_source_you/core/services/payment_controller.dart';
-import 'package:we_source_you/widgets/payment/payment_summary_sheet.dart';
 
 class JobProposalsView extends StatelessWidget {
   final JobPostModel job;
@@ -79,7 +80,7 @@ class JobProposalsView extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _statusChip(proposal.status),
+                                statusChip(proposal.status),
                                 Text(
                                   DateFormat(
                                     'MMM dd, yyyy',
@@ -102,7 +103,7 @@ class JobProposalsView extends StatelessWidget {
                                     icon: const Icon(Icons.person),
                                     label: const Text("View Profile"),
                                     onPressed: () async {
-                                      _openTeamProfile(proposal.userId);
+                                      openTeamProfile(proposal.userId);
                                     },
                                   ),
                                 ),
@@ -117,7 +118,7 @@ class JobProposalsView extends StatelessWidget {
                                         backgroundColor: Colors.red,
                                       ),
                                       onPressed: () {
-                                        _updateProposalStatus(
+                                        updateProposalStatus(
                                           proposal.id,
                                           'rejected',
                                         );
@@ -136,7 +137,7 @@ class JobProposalsView extends StatelessWidget {
                                         backgroundColor: Colors.green,
                                       ),
                                       onPressed: () {
-                                        _showProposalPaymentSheet(proposal);
+                                        showProposalPaymentSheet(proposal);
                                       },
                                       child: const Text("Approve"),
                                     ),
@@ -155,67 +156,9 @@ class JobProposalsView extends StatelessWidget {
   }
 }
 
-Widget _statusChip(String status) {
-  Color bg;
-  Color text;
-
-  switch (status) {
-    case 'approved':
-      bg = Colors.green.shade100;
-      text = Colors.green.shade800;
-      break;
-    case 'rejected':
-      bg = Colors.red.shade100;
-      text = Colors.red.shade800;
-      break;
-    default:
-      bg = Colors.orange.shade100;
-      text = Colors.orange.shade800;
-  }
-
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-    decoration: BoxDecoration(
-      color: bg,
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      status.toUpperCase(),
-      style: TextStyle(fontWeight: FontWeight.bold, color: text, fontSize: 12),
-    ),
-  );
-}
-
-Future<void> _updateProposalStatus(String proposalId, String status) async {
-  await FirebaseFirestore.instance
-      .collection('proposals')
-      .doc(proposalId)
-      .update({'status': status, 'updatedAt': FieldValue.serverTimestamp()});
-}
-
-Future<void> _openTeamProfile(String userId) async {
-  try {
-    final doc = await FirebaseFirestore.instance
-        .collection('team')
-        .doc(userId)
-        .get();
-
-    if (!doc.exists) {
-      Get.snackbar('Error', 'Profile not found');
-      return;
-    }
-
-    final member = TeamModel.fromMap(doc.data()!);
-
-    Get.to(() => TeamProfileView(member: member));
-  } catch (e) {
-    Get.snackbar('Error', 'Failed to load profile');
-  }
-}
-
 // في ملف JobProposalsView.dart
 
-Future<void> _showProposalPaymentSheet(ProposalModel proposal) async {
+Future<void> showProposalPaymentSheet(ProposalModel proposal) async {
   // 1. التأكد من وجود مبلغ صالح
   final jobDoc = await FirebaseFirestore.instance
       .collection('jobs')

@@ -1,80 +1,3 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-
-// class ProfileController extends GetxController {
-//   final uid = FirebaseAuth.instance.currentUser!.uid;
-//   final FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-//   // Editable state
-//   var isEditing = false.obs;
-//   var isLoading = false.obs;
-
-//   // TextEditingControllers
-//   late TextEditingController firstNameCtrl;
-//   late TextEditingController lastNameCtrl;
-//   late TextEditingController emailCtrl;
-//   late TextEditingController phoneCtrl;
-//   late TextEditingController cityCtrl;
-
-//   @override
-//   void onInit() {
-//     super.onInit();
-//     firstNameCtrl = TextEditingController();
-//     lastNameCtrl = TextEditingController();
-//     emailCtrl = TextEditingController();
-//     phoneCtrl = TextEditingController();
-//     cityCtrl = TextEditingController();
-
-//     getProfile();
-//   }
-
-//   void goBack() => Get.back();
-
-//   Future<void> getProfile() async {
-//     try {
-//       isLoading.value = true;
-
-//       final doc = await firestore.collection('users').doc(uid).get();
-//       if (!doc.exists) return;
-
-//       final data = doc.data() as Map<String, dynamic>;
-
-//       firstNameCtrl.text = data["firstName"] ?? "";
-//       lastNameCtrl.text = data["lastName"] ?? "";
-//       emailCtrl.text = data["email"] ?? "";
-//       phoneCtrl.text = data["phone"] ?? "";
-//       cityCtrl.text = data["city"] ?? "";
-//     } catch (e) {
-//       Get.snackbar("Error", "Failed to load profile: $e");
-//     } finally {
-//       isLoading.value = false;
-//     }
-//   }
-
-//   Future<void> saveProfile() async {
-//     try {
-//       isLoading.value = true;
-
-//       await firestore.collection('users').doc(uid).update({
-//         "firstName": firstNameCtrl.text,
-//         "lastName": lastNameCtrl.text,
-//         "email": emailCtrl.text,
-//         "phone": phoneCtrl.text,
-//         "city": cityCtrl.text,
-//       });
-
-//       Get.snackbar("Success", "Profile updated successfully!");
-//       isEditing.value = false;
-//     } catch (e) {
-//       Get.snackbar("Error", "Failed to save profile: $e");
-//     } finally {
-//       isLoading.value = false;
-//     }
-//   }
-// }
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -89,16 +12,16 @@ class ProfileController extends GetxController {
   // Editable state
   var isEditing = false.obs;
   var isLoading = false.obs;
+  var individualJob = ''.obs; // الوظيفة الحالية
+  var analystSpecialty = ''.obs; // تخصص Analyst لو تم اختياره
 
   // Account type
-  var accountType = "individual".obs; // "company" or "individual"
+  var accountType = "individual".obs;
 
   // TextEditingControllers
-  late TextEditingController firstNameCtrl;
-  late TextEditingController lastNameCtrl;
+  late TextEditingController fullNameCtrl;
   late TextEditingController emailCtrl;
   late TextEditingController phoneCtrl;
-  late TextEditingController cityCtrl;
 
   // Individual fields
   late TextEditingController mediaWorkTypeCtrl; // For adding new type
@@ -115,15 +38,14 @@ class ProfileController extends GetxController {
   var postedJobs = <JobPostModel>[].obs;
   var isLoadingJobs = false.obs;
 
+  RxBool available = false.obs;
   @override
   void onInit() {
     super.onInit();
 
-    firstNameCtrl = TextEditingController();
-    lastNameCtrl = TextEditingController();
+    fullNameCtrl = TextEditingController();
     emailCtrl = TextEditingController();
     phoneCtrl = TextEditingController();
-    cityCtrl = TextEditingController();
 
     mediaWorkTypeCtrl = TextEditingController();
     socialLinksCtrl = TextEditingController();
@@ -132,7 +54,6 @@ class ProfileController extends GetxController {
     websiteCtrl = TextEditingController();
     countryCtrl = TextEditingController();
     descriptionCtrl = TextEditingController();
-
     getProfile();
     fetchUserJobs();
   }
@@ -149,35 +70,69 @@ class ProfileController extends GetxController {
       final data = doc.data() as Map<String, dynamic>;
 
       accountType.value = data['accountType'] ?? data['type'] ?? 'individual';
-
+      available.value = data['available'] ?? false;
       if (accountType.value == "individual") {
-        firstNameCtrl.text = data["firstName"] ?? "";
-        lastNameCtrl.text = data["lastName"] ?? "";
+        fullNameCtrl.text = data["fullName"] ?? "";
         emailCtrl.text = data["email"] ?? "";
         phoneCtrl.text = data["phone"] ?? "";
-        cityCtrl.text = data["city"] ?? "";
+        countryCtrl.text = data["country"] ?? "";
+        analystSpecialty.value = data["analystSpecialty"] ?? '';
+        socialLinksCtrl.text = data["socialLinks"] ?? "";
 
-        // Handle mediaWorkType as list or string
+        // نجيب كل الوظائف من الـ array
+        List<String> types = [];
         if (data["mediaWorkTypes"] != null) {
-          mediaWorkTypes.value = List<String>.from(data["mediaWorkTypes"]);
-        } else if (data["mediaWorkType"] != null) {
-          mediaWorkTypes.value = [data["mediaWorkType"]];
+          types = List<String>.from(data["mediaWorkTypes"]);
         }
 
+        mediaWorkTypes.value = types;
+
+        // خلي أول عنصر كوظيفة أساسية
+
+        // إذا موجود Analyst كبداية يمكن تعيينه كوظيفة أساسية
+        individualJob.value = types.isNotEmpty ? types.first : '';
+
+        // باقي الوظائف بدون أول عنصر
+        // mediaWorkTypes.value = types.length > 1 ? types.sublist(1) : [];
+
         socialLinksCtrl.text = data["socialLinks"] ?? "";
+        available.value = data['available'] ?? false; // <-- هذا السطر الجديد
       } else if (accountType.value == "company") {
+        available.value = data['available'] ?? false; // <-- هذا السطر الجديد
+
         companyNameCtrl.text = data["companyName"] ?? "";
         emailCtrl.text = data["email"] ?? "";
         phoneCtrl.text = data["phone"] ?? "";
-        cityCtrl.text = data["city"] ?? "";
         countryCtrl.text = data["country"] ?? "";
         websiteCtrl.text = data["website"] ?? "";
         descriptionCtrl.text = data["description"] ?? "";
       }
+      available.value = data['available'] ?? false;
     } catch (e) {
       Get.snackbar("Error", "Failed to load profile: $e");
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> toggleAvailability(bool val) async {
+    try {
+      available.value = val;
+
+      // users
+      await firestore.collection('users').doc(uid).update({'available': val});
+
+      // team (مهم جداً)
+      final teamDoc = firestore.collection('team').doc(uid);
+      final exists = await teamDoc.get();
+
+      if (exists.exists) {
+        await teamDoc.update({'available': val});
+      }
+
+      Get.snackbar("Success", "Availability updated");
+    } catch (e) {
+      Get.snackbar("Error", "Failed to update availability: $e");
     }
   }
 
@@ -213,12 +168,16 @@ class ProfileController extends GetxController {
   }
 
   void addMediaWorkType() {
-    if (mediaWorkTypeCtrl.text.trim().isNotEmpty) {
-      final type = mediaWorkTypeCtrl.text.trim();
-      if (!mediaWorkTypes.contains(type)) {
-        mediaWorkTypes.add(type);
-        mediaWorkTypeCtrl.clear();
-      }
+    final type = mediaWorkTypeCtrl.text.trim();
+    if (type.isNotEmpty && !mediaWorkTypes.contains(type)) {
+      mediaWorkTypes.add(type); // يضاف مباشرة للـ array
+      mediaWorkTypeCtrl.clear();
+    }
+
+    // إذا الوظيفة الأساسية مش موجودة ضمن القائمة نضيفها
+    if (individualJob.value.isNotEmpty &&
+        !mediaWorkTypes.contains(individualJob.value)) {
+      mediaWorkTypes.insert(0, individualJob.value); // خليها أول عنصر
     }
   }
 
@@ -230,49 +189,36 @@ class ProfileController extends GetxController {
     try {
       isLoading.value = true;
 
+      // دمج individualJob مع mediaWorkTypes بدون تكرار
+      List<String> allJobs = mediaWorkTypes.toList();
+      if (individualJob.value.isNotEmpty &&
+          !allJobs.contains(individualJob.value)) {
+        allJobs.insert(0, individualJob.value);
+      }
+
       Map<String, dynamic> updateData = {
         "email": emailCtrl.text,
         "phone": phoneCtrl.text,
-        "city": cityCtrl.text,
+        "country": countryCtrl.text,
+        "mediaWorkTypes": allJobs, // كل الوظائف
+        "analystSpecialty": analystSpecialty.value,
+        "socialLinks": socialLinksCtrl.text,
+        "fullName": fullNameCtrl.text,
       };
-
-      if (accountType.value == "individual") {
-        updateData.addAll({
-          "firstName": firstNameCtrl.text,
-          "lastName": lastNameCtrl.text,
-          "mediaWorkTypes": mediaWorkTypes.toList(), // Save as list
-          "socialLinks": socialLinksCtrl.text,
-        });
-      } else if (accountType.value == "company") {
-        updateData.addAll({
-          "companyName": companyNameCtrl.text,
-          "website": websiteCtrl.text,
-          "country": countryCtrl.text,
-          "description": descriptionCtrl.text,
-        });
-      }
 
       await firestore.collection('users').doc(uid).update(updateData);
 
-      // Also update team collection if exists
+      // تحديث team collection لو موجودة
       try {
         final teamDoc = await firestore.collection('team').doc(uid).get();
         if (teamDoc.exists) {
-          Map<String, dynamic> teamData = {};
-          if (accountType.value == "individual") {
-            teamData = {
-              "name": "${firstNameCtrl.text} ${lastNameCtrl.text}".trim(),
-              "title": mediaWorkTypes.isNotEmpty ? mediaWorkTypes.first : "",
-              "specialties": mediaWorkTypes.toList(),
-            };
-          } else {
-            teamData = {"name": companyNameCtrl.text, "title": "Company"};
-          }
+          Map<String, dynamic> teamData = {
+            "title": allJobs.isNotEmpty ? allJobs.first : "",
+            "specialties": allJobs,
+          };
           await firestore.collection('team').doc(uid).update(teamData);
         }
-      } catch (e) {
-        // Team update is optional
-      }
+      } catch (_) {}
 
       Get.snackbar("Success", "Profile updated successfully!");
       isEditing.value = false;
