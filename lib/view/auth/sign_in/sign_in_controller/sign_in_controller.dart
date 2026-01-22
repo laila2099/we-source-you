@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,22 +35,18 @@ class SignInController extends GetxController {
     try {
       isLoading.value = true;
       await box.write('rememberMe', rememberMe.value);
-      await _auth.setPersistence(
-        rememberMe.value ? Persistence.LOCAL : Persistence.SESSION,
-      );
 
       final UserCredential cred = await _auth.signInWithEmailAndPassword(
         email: emailTrimmed,
         password: passwordTrimmed,
       );
 
+      print("Signed in successfully");
+
       User? user = cred.user;
       if (user == null) throw Exception("Sign in failed");
 
-      await user.reload();
-      user = _auth.currentUser;
-
-      if (!user!.emailVerified) {
+      if (!user.emailVerified) {
         await _auth.signOut();
         _showError(
           "Email not verified",
@@ -61,21 +56,24 @@ class SignInController extends GetxController {
         return;
       }
 
-      // تحديث البيانات دون مسح الأسماء (استخدام update بدلاً من set)
       final userDoc = _firestore.collection('users').doc(user.uid);
-      await userDoc.update({
+      await userDoc.set({
         'uid': user.uid,
         'email': user.email,
         'emailVerified': true,
         'lastLogin': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
 
-      Get.find<AuthController>().refreshAuthState();
+      if (Get.isRegistered<AuthController>()) {
+        await Get.find<AuthController>().refreshAuthState();
+      }
+
       Get.back(result: true);
     } on FirebaseAuthException catch (e) {
       _handleAuthError(e);
     } catch (e) {
       _showError("Error", "An unexpected error occurred.");
+      debugPrint("SignInController error: $e");
     } finally {
       isLoading.value = false;
     }
@@ -102,10 +100,6 @@ class SignInController extends GetxController {
       colorText: Colors.white,
     );
   }
-
-  // Future<void> continueWithGoogle() async {
-  //   Get.snackbar("Action", "Google Sign-In not implemented yet");
-  // }
 
   void goBack() => Get.back();
 

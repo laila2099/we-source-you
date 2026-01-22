@@ -36,3 +36,10 @@ exports.capturePayPalPayment = require('./marketplace_payments').capturePayPalPa
 exports.releaseMediaPayment = require('./release_marketplace_payments').releaseMediaPayment;
 exports.releaseHiringPayment = require('./release_marketplace_payments').releaseHiringPayment;
 exports.releaseProposalPayment = require('./release_marketplace_payments').releaseProposalPayment;
+
+// KYC
+exports.createSumsubAccessToken = require('./sumsub').createSumsubAccessToken;
+exports.sumsubWebhook = require('./sumsubWebhooks').sumsubWebhook;
+
+// Admin Manual KYC Function
+exports.adminReviewKyc = require('./admin_kyc').adminReviewKyc;

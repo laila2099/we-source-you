@@ -4,8 +4,6 @@ const Stripe = require('stripe');
 // UPDATED: Destructure Client and Environment from the new SDK
 const { Client, Environment } = require('@paypal/paypal-server-sdk');
 
-admin.initializeApp(); // تم اضافة هذا السطر لتجنب أي خطأ في db
-
 const db = admin.firestore();
 const { defineString } = require('firebase-functions/params');
 // Stripe

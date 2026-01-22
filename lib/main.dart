@@ -12,59 +12,8 @@ import 'package:we_source_you/routes/app_routes.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await GetStorage.init();
-//   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-//   // Suppress assertion errors during hot reload related to overlay/navigator stack
-//   FlutterError.onError = (details) {
-//     final errorMsg = details.exceptionAsString();
-//     // Suppress known hot reload overlay/navigator assertion errors
-//     if (errorMsg.contains('_elements.contains(element)') ||
-//         errorMsg.contains('mounted') ||
-//         errorMsg.contains('Overlay') ||
-//         errorMsg.contains('isDisposed') ||
-//         errorMsg.contains('disposed EngineFlutterView')) {
-//       debugPrint('⚠️ Hot reload rendering issue (suppressed): $errorMsg');
-//       return; // Don't crash, just log
-//     }
-//     FlutterError.dumpErrorToConsole(details);
-//   };
-
-//   await TranslationService.init();
-//   runApp(const MyApp());
-// }
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Set up error handler BEFORE any initialization to catch errors early
-  FlutterError.onError = (details) {
-    final errorMsg = details.exceptionAsString();
-
-    // Suppress known hot reload/restart issues
-    if (errorMsg.contains('_elements.contains(element)') ||
-        errorMsg.contains('mounted') ||
-        errorMsg.contains('Overlay') ||
-        errorMsg.contains('isDisposed') ||
-        errorMsg.contains('disposed EngineFlutterView') ||
-        errorMsg.contains('during a platform message response callback')) {
-      debugPrint(
-        '⚠️ Flutter Framework Sync Issue (suppressed): ${details.exception}',
-      );
-      return;
-    }
-
-    // Log platform message errors specifically
-    if (errorMsg.contains('platform message') ||
-        errorMsg.contains('completer') ||
-        details.library == 'services library') {
-      debugPrint('⚠️ Platform Message Error: ${details.exception}');
-      debugPrint('Stack: ${details.stack}');
-    }
-
-    FlutterError.dumpErrorToConsole(details);
-  };
 
   try {
     // Initialize services with proper error handling

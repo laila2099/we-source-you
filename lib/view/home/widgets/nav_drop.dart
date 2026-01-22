@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:we_source_you/core/constant/app_color.dart';
 import 'package:we_source_you/core/constant/text_style.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
 

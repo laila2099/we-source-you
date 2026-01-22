@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class JobPostModel {
   String? id;
   String? userId; // 👈 صاحب الوظيفة
@@ -17,7 +19,7 @@ class JobPostModel {
   String projectDetails;
   DateTime? startDate;
   DateTime? endDate;
-  DateTime? deadline;
+  // DateTime? deadline;
 
   // Step 3: Requirements
   bool hasCamera;
@@ -42,6 +44,7 @@ class JobPostModel {
   String additionalInfo;
   bool isUrgent;
   bool isFeatured;
+  DateTime? createdAt;
 
   JobPostModel({
     this.id,
@@ -59,7 +62,7 @@ class JobPostModel {
     this.projectDetails = '',
     this.startDate,
     this.endDate,
-    this.deadline,
+    // this.deadline,
     this.hasCamera = false,
     this.hasAudio = false,
     this.canTravel = false,
@@ -78,6 +81,7 @@ class JobPostModel {
     this.additionalInfo = '',
     this.isUrgent = false,
     this.isFeatured = false,
+    this.createdAt,
   });
 
   Map<String, dynamic> toMap() {
@@ -97,7 +101,7 @@ class JobPostModel {
       'projectDetails': projectDetails,
       'startDate': startDate?.toIso8601String(),
       'endDate': endDate?.toIso8601String(),
-      'deadline': deadline?.toIso8601String(),
+      // 'deadline': deadline?.toIso8601String(),
       'hasCamera': hasCamera,
       'hasAudio': hasAudio,
       'canTravel': canTravel,
@@ -116,11 +120,28 @@ class JobPostModel {
       'additionalInfo': additionalInfo,
       'isUrgent': isUrgent,
       'isFeatured': isFeatured,
-      'createdAt': DateTime.now().toIso8601String(),
+      'createdAt': FieldValue.serverTimestamp(),
     };
   }
 
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+
+    return null;
+  }
+
   factory JobPostModel.fromMap(Map<String, dynamic> data) {
+    print(
+      "DEBUG: ID: ${data['id']} | Start: ${data['startDate']} | End: ${data['endDate']}",
+    );
     return JobPostModel(
       id: data['id'],
       title: data['title'] ?? '',
@@ -134,15 +155,10 @@ class JobPostModel {
       currency: data['currency'] ?? 'USD',
       period: data['period'] ?? 'Monthly',
       projectDetails: data['projectDetails'] ?? '',
-      startDate: data['startDate'] != null
-          ? DateTime.tryParse(data['startDate'])
-          : null,
-      endDate: data['endDate'] != null
-          ? DateTime.tryParse(data['endDate'])
-          : null,
-      deadline: data['deadline'] != null
-          ? DateTime.tryParse(data['deadline'])
-          : null,
+      startDate: _parseDate(data['startDate']),
+      endDate: _parseDate(data['endDate']),
+
+      // deadline: _parseDate(data['deadline']),
       hasCamera: data['hasCamera'] ?? false,
       hasAudio: data['hasAudio'] ?? false,
       canTravel: data['canTravel'] ?? false,
@@ -161,6 +177,8 @@ class JobPostModel {
       additionalInfo: data['additionalInfo'] ?? '',
       isUrgent: data['isUrgent'] ?? false,
       isFeatured: data['isFeatured'] ?? false,
+      // داخل JobPostModel.fromMap
+      createdAt: _parseDate(data['createdAt']),
     );
   }
 }
