@@ -221,7 +221,6 @@ class JobCard extends GetView<JobsController> {
                 // );
 
                 /// test
-
                 final provider = await showPaymentMethodDialog(context);
                 if (provider == null) {
                   return;

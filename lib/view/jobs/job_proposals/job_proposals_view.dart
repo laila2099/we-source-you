@@ -1,15 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:we_source_you/model/job_post_model.dart';
 import 'package:we_source_you/model/payment_models.dart';
 import 'package:we_source_you/model/proposal_model.dart';
-import 'package:intl/intl.dart';
-import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/view/jobs/job_proposals/widgets/helper.dart';
 import 'package:we_source_you/view/jobs/job_proposals/widgets/status_chip.dart';
-import 'package:we_source_you/view/team/team_profile.dart';
-import 'package:we_source_you/core/services/payment_controller.dart';
+
+import '../../../widgets/payment_method_dialog.dart';
+import '../jobs_controller/jobs_controller.dart';
 
 class JobProposalsView extends StatelessWidget {
   final JobPostModel job;
@@ -18,6 +18,7 @@ class JobProposalsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<JobsController>();
     return Scaffold(
       appBar: AppBar(
         title: Text("Proposals for ${job.title}"),
@@ -136,8 +137,19 @@ class JobProposalsView extends StatelessWidget {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.green,
                                       ),
-                                      onPressed: () {
-                                        showProposalPaymentSheet(proposal);
+                                      onPressed: () async {
+                                        final provider =
+                                            await showPaymentMethodDialog(
+                                              context,
+                                            );
+                                        if (provider == null) {
+                                          return;
+                                        }
+
+                                        await controller.acceptAndPayProposal(
+                                          proposal.id,
+                                          provider,
+                                        );
                                       },
                                       child: const Text("Approve"),
                                     ),
@@ -158,7 +170,7 @@ class JobProposalsView extends StatelessWidget {
 
 // في ملف JobProposalsView.dart
 
-Future<void> showProposalPaymentSheet(ProposalModel proposal) async {
+/*Future<void> showProposalPaymentSheet(ProposalModel proposal) async {
   // 1. التأكد من وجود مبلغ صالح
   final jobDoc = await FirebaseFirestore.instance
       .collection('jobs')
@@ -194,7 +206,7 @@ Future<void> showProposalPaymentSheet(ProposalModel proposal) async {
     ),
     isScrollControlled: true,
   );
-}
+}*/
 
 class PaymentSummarySheet extends StatelessWidget {
   final String title;

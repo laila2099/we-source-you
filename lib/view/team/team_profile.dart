@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/core/constant/app_color.dart';
-import 'package:we_source_you/view/jobs/job_proposals/job_proposals_view.dart';
-import 'package:we_source_you/view/profile/profile_cotroller/profile_controller.dart';
+import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/widgets/circular_icon/circular_icon.dart';
 import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
-import 'package:we_source_you/core/services/payment_controller.dart';
+
+import '../../core/services/payments/hireme_service.dart';
+import '../../widgets/payment_method_dialog.dart';
 
 // class TeamProfileView extends StatelessWidget {
 //   final TeamModel member;
@@ -695,15 +694,15 @@ class TeamProfileView extends StatelessWidget {
                                   const SizedBox(height: 10),
                                   _RateRow(
                                     label: 'Hourly',
-                                    rate: member.hourlyRate ?? '0',
+                                    rate: '${member.hourlyRate}/Hour',
                                   ),
                                   _RateRow(
                                     label: 'Daily',
-                                    rate: member.dailyRate ?? '0',
+                                    rate: '${member.dailyRate}/Day',
                                   ),
                                   _RateRow(
                                     label: 'Project',
-                                    rate: member.projectRate ?? '0',
+                                    rate: '${member.projectRate}/Project',
                                   ),
                                   const SizedBox(height: 20),
                                   Text('Reviews', style: nameStyle),

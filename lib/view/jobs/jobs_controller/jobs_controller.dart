@@ -1,10 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/core/repository/jobs_repository.dart';
 import 'package:we_source_you/model/job_card_model.dart';
 import 'package:we_source_you/model/job_post_model.dart';
 import 'package:we_source_you/model/job_search_model.dart';
 import 'package:we_source_you/routes/app_routes.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../../core/payments/payment_provider.dart';
+import '../../../core/services/payments/payment_service.dart';
+import '../../../core/services/payments/proposal_actions.dart';
+import '../../../core/services/payments/proposal_service.dart';
 
 class JobsController extends GetxController {
   final JobsRepository _repo = JobsRepository();
@@ -210,19 +215,33 @@ class JobsController extends GetxController {
   }
 
   // دالة لطلب "نزاع" أو "مشكلة" من قبل المستخدم
-  Future<void> requestDispute(String jobId, String reason) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('payments')
-          .doc(jobId)
-          .update({
-            'status': 'disputed',
-            'disputeReason': reason,
-            'disputeAt': FieldValue.serverTimestamp(),
-          });
-      Get.snackbar("Dispute", "Admin has been notified.");
-    } catch (e) {
-      Get.snackbar("Error", e.toString());
-    }
+  // Future<void> requestDispute(String jobId, String reason) async {
+  //   try {
+  //     await FirebaseFirestore.instance
+  //         .collection('payments')
+  //         .doc(jobId)
+  //         .update({
+  //           'status': 'disputed',
+  //           'disputeReason': reason,
+  //           'disputeAt': FieldValue.serverTimestamp(),
+  //         });
+  //     Get.snackbar("Dispute", "Admin has been notified.");
+  //   } catch (e) {
+  //     Get.snackbar("Error", e.toString());
+  //   }
+  // }
+
+  /// accept Proposal
+  Future<void> acceptAndPayProposal(
+    String proposalId,
+    PaymentProvider provider,
+  ) async {
+    final actions = ProposalActions(ProposalService(), PaymentService());
+
+    await actions.acceptAndPayWeb(
+      proposalId: proposalId,
+      provider: provider,
+      baseUrl: Uri.base.origin,
+    );
   }
 }

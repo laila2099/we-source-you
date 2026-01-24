@@ -13,10 +13,10 @@ const STRIPE_SECRET = defineString('STRIPE_SECRET');
 const PAYPAL_CLIENT_ID = defineString('PAYPAL_CLIENT_ID');
 const PAYPAL_SECRET = defineString('PAYPAL_SECRET');
 
-const stripe = new Stripe(STRIPE_SECRET.value()); // تم تعديل التهيئة لتعمل مع defineString()
+const stripe = new Stripe(STRIPE_SECRET.value());
 
 // ================== UPDATED: PayPal Client Helper ==================
-// دالة مساعدة لضمان تهيئة العميل بأمان وتجنب خطأ الـ undefined
+
 function getPayPalClient() {
   if (!PAYPAL_CLIENT_ID.value() || !PAYPAL_SECRET.value()) {
     throw new Error(
