@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:we_source_you/core/middleware/admin_guard.dart';
-import 'package:we_source_you/view/admin_dashboard/admin_view/admin_view.dart';
 import 'package:we_source_you/routes/app_routes.dart';
+import 'package:we_source_you/view/admin_dashboard/admin_view/admin_view.dart';
 import 'package:we_source_you/view/auth/binding/auth_bindings.dart';
 import 'package:we_source_you/view/auth/sign_in/sign_in_view/sign_in_view.dart';
 import 'package:we_source_you/view/auth/sign_up/sign_up-view/sign_up_view.dart';

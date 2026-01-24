@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "we-source-you"
-  }
+    "default": "we-source-you",
+    "dev-sarah": "we-source-you"
+  },
+  "targets": {},
+  "etags": {}
 }

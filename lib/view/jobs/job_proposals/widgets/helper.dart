@@ -22,7 +22,7 @@ Future<void> openTeamProfile(String userId) async {
       return;
     }
 
-    final member = TeamModel.fromMap(doc.data()!);
+    final member = TeamModel.fromMap(id: doc.id, map: doc.data()!);
 
     Get.to(() => TeamProfileView(member: member));
   } catch (e) {

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -7,9 +6,6 @@ import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/model/media_item.dart';
 import 'package:we_source_you/view/jobs/job_proposals/job_proposals_view.dart';
 import 'package:we_source_you/view/media_market/media_market_controller/media_market_controller.dart';
-import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
-import 'package:we_source_you/core/constant/responsive_layout.dart';
-import 'package:we_source_you/core/services/payment_controller.dart';
 import 'package:we_source_you/widgets/rating.dart';
 
 import '../widgets/buy_or_download_button.dart';

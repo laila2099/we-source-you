@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_rx/get_rx.dart';
 
 const Map<String, Color> typeColors = {
   'company': Colors.orange,
