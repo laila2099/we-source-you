@@ -1,12 +1,8 @@
 import 'dart:async';
-<<<<<<< HEAD
 
-=======
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
->>>>>>> 8c03dba (.)
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:get/get.dart';
 import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/routes/app_routes.dart';
 
