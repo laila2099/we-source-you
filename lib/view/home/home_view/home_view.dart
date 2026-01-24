@@ -10,6 +10,7 @@ import 'package:we_source_you/view/home/widgets/image_sider.dart';
 import 'package:we_source_you/view/home/widgets/navbar.dart';
 import 'package:we_source_you/view/jobs/widget/jobs_card.dart';
 import 'package:we_source_you/view/jobs/jobs_controller/jobs_controller.dart';
+import 'package:we_source_you/view/jobs/widget/jobs_card.dart';
 import 'package:we_source_you/view/team/team_controller/team_controller.dart';
 import 'package:we_source_you/view/team/widget/team_card.dart';
 import 'package:we_source_you/view/home/widgets/statistics.dart';

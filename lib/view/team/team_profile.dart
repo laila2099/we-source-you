@@ -412,18 +412,60 @@ class TeamProfileView extends StatelessWidget {
           children: [
             ListTile(
               title: const Text('Hourly'),
-              subtitle: Text(member.hourlyRate ?? '0'),
-              onTap: () => Get.back(),
+              subtitle: Text('${member.hourlyRate}/Hour'),
+              onTap: () async {
+                Get.back();
+
+                final provider = await showPaymentMethodDialog(context);
+                if (provider == null) return; // user closed dialog
+
+                final baseUrl = Uri.base.origin; // للويب ممتاز
+                print(Uri.base.origin);
+                await HireMeService().hireAndPayWeb(
+                  freelancerId: member.id,
+                  pricingType: 'hourly',
+                  provider: provider,
+                  baseUrl: baseUrl,
+                );
+              },
             ),
             ListTile(
               title: const Text('Daily'),
-              subtitle: Text(member.dailyRate ?? '0'),
-              onTap: () => Get.back(),
+              subtitle: Text('${member.dailyRate}/Day'),
+              onTap: () async {
+                Get.back();
+
+                final provider = await showPaymentMethodDialog(context);
+                if (provider == null) return; // user closed dialog
+
+                final baseUrl = Uri.base.origin; // للويب ممتاز
+                print(Uri.base.origin);
+                await HireMeService().hireAndPayWeb(
+                  freelancerId: member.id,
+                  pricingType: 'daily',
+                  provider: provider,
+                  baseUrl: baseUrl,
+                );
+              },
             ),
             ListTile(
               title: const Text('Project'),
-              subtitle: Text(member.projectRate ?? '0'),
-              onTap: () => Get.back(),
+              subtitle: Text('${member.projectRate}/Project'),
+              onTap: () async {
+                Get.back();
+
+                final provider = await showPaymentMethodDialog(context);
+                if (provider == null) return; // user closed dialog
+
+                final baseUrl = Uri.base.origin; // للويب ممتاز
+                print(Uri.base.origin);
+                await HireMeService().hireAndPayWeb(
+                  freelancerId: member.id,
+                  pricingType: 'project',
+                  provider: provider,
+                  baseUrl: baseUrl,
+                );
+              },
             ),
           ],
         ),

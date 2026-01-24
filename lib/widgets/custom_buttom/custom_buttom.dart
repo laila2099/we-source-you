@@ -4,10 +4,11 @@ import 'package:we_source_you/core/constant/app_color.dart';
 
 class WebHoverButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed; // ✅ nullable
   final Widget? icon;
   final double? width;
   final double? height;
+  final bool enabled; // ✅
 
   const WebHoverButton({
     super.key,
@@ -16,6 +17,7 @@ class WebHoverButton extends StatelessWidget {
     this.icon,
     this.width,
     this.height,
+    this.enabled = true,
   });
 
   final LinearGradient gradient = const LinearGradient(
@@ -39,26 +41,34 @@ class WebHoverButton extends StatelessWidget {
             width ?? constraints.maxWidth.clamp(120.0, 220.0);
 
         return MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => hover.value = true,
-          onExit: (_) => hover.value = false,
+          cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          onEnter: (_) {
+            if (enabled) hover.value = true;
+          },
+          onExit: (_) {
+            if (enabled) hover.value = false;
+          },
           child: GestureDetector(
-            onTap: onPressed,
+            onTap: enabled ? onPressed : null,
             behavior: HitTestBehavior.opaque,
             child: ValueListenableBuilder<bool>(
               valueListenable: hover,
               builder: (context, isHover, child) {
+                final showHover = enabled && isHover;
+
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   height: height ?? 48.h,
                   width: calculatedWidth,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(40.r),
-                    gradient: isHover ? null : gradient,
-                    color: isHover ? Colors.white : null,
+                    gradient: enabled ? (showHover ? null : gradient) : null,
+                    color: enabled
+                        ? (showHover ? Colors.white : null)
+                        : Colors.grey.shade400, // ✅ disabled color
                   ),
                   child: CustomPaint(
-                    painter: isHover
+                    painter: showHover
                         ? _GradientBorderPainter(
                             gradient: gradient,
                             strokeWidth: 2,
