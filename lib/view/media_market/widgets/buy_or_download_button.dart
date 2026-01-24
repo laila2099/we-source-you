@@ -15,8 +15,8 @@ class BuyOrDownloadButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<MediaController>();
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    print(uid);
     print(itemId);
+    print(uid);
     if (uid == null) return const SizedBox.shrink();
 
     final stream = FirebaseFirestore.instance
@@ -24,7 +24,7 @@ class BuyOrDownloadButton extends StatelessWidget {
         .where('buyerId', isEqualTo: uid)
         .where('itemId', isEqualTo: itemId)
         .where('status', isEqualTo: 'paid')
-        .limit(1)
+        .orderBy('downloadDeadline', descending: false)
         .snapshots();
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -38,8 +38,15 @@ class BuyOrDownloadButton extends StatelessWidget {
           );
         }
         print(snapshot.data);
+        if (snapshot.hasError) {
+          return Text(
+            'Error: ${snapshot.error}',
+            style: const TextStyle(color: Colors.red),
+          );
+        }
 
         final docs = snapshot.data?.docs ?? [];
+        print(docs);
 
         // ✅ ما اشترى: Buy
         if (docs.isEmpty) {
@@ -53,6 +60,7 @@ class BuyOrDownloadButton extends StatelessWidget {
             onPressed: () async {
               final provider = await showPaymentMethodDialog(context);
               if (provider == null) return;
+
               controller.buy(itemId, provider);
             },
             width: double.infinity,
@@ -60,7 +68,7 @@ class BuyOrDownloadButton extends StatelessWidget {
         }
 
         // ✅ اشترى: Download / Expired
-        final purchaseDoc = docs.first;
+        final purchaseDoc = docs.last;
         final data = purchaseDoc.data();
 
         final deadlineTs = data['downloadDeadline'] as Timestamp?;
@@ -69,7 +77,7 @@ class BuyOrDownloadButton extends StatelessWidget {
             ? true
             : DateTime.now().isAfter(deadline);
 
-        print(data);
+        print(deadline);
         print(purchaseDoc.id);
         if (expired) {
           return WebHoverButton(

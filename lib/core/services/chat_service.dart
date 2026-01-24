@@ -115,4 +115,16 @@ class ChatService {
 
     await batch.commit();
   }
+
+  Future<void> markAsRead({required String conversationId}) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    print(uid);
+    if (uid == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(conversationId)
+        .update({'unread.$uid': 0});
+    print(uid);
+  }
 }

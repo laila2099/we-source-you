@@ -182,16 +182,6 @@ class JobCard extends GetView<JobsController> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () async {
-                // controller.applyForJob(job);
-                // await controller.testPayPalJobContract("wIpTircg9WVOpg4Izcv5");
-                final provider = await showPaymentMethodDialog(context);
-                if (provider == null) return; // user closed dialog
-
-                await controller.testJobContract(
-                  "93vVf8T8fa10qZeX9D4b",
-                  provider,
-                );
-
                 // Navigator.push(
                 //   context,
                 //   MaterialPageRoute(
@@ -199,6 +189,18 @@ class JobCard extends GetView<JobsController> {
                 //         ChatPage(conversationId: "dGSDfbFgljZ1UxDevbvZ"),
                 //   ),
                 // );
+
+                /// test
+
+                final provider = await showPaymentMethodDialog(context);
+                if (provider == null) {
+                  return;
+                }
+
+                await controller.acceptAndPayProposal(
+                  '7VI8kmfNRmlCOcgZU5Je',
+                  provider,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.lightBlue,

@@ -8,6 +8,9 @@ import 'package:we_source_you/model/proposal_model.dart';
 import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/view/team/team_profile.dart';
 
+import '../../../widgets/payment_method_dialog.dart';
+import '../jobs_controller/jobs_controller.dart';
+
 class JobProposalsView extends StatelessWidget {
   final JobPostModel job;
 
@@ -15,6 +18,7 @@ class JobProposalsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<JobsController>();
     return Scaffold(
       appBar: AppBar(
         title: Text("Proposals for ${job.title}"),
@@ -133,8 +137,19 @@ class JobProposalsView extends StatelessWidget {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.green,
                                       ),
-                                      onPressed: () {
-                                        _showProposalPaymentSheet(proposal);
+                                      onPressed: () async {
+                                        final provider =
+                                            await showPaymentMethodDialog(
+                                              context,
+                                            );
+                                        if (provider == null) {
+                                          return;
+                                        }
+
+                                        await controller.acceptAndPayProposal(
+                                          proposal.id,
+                                          provider,
+                                        );
                                       },
                                       child: const Text("Approve"),
                                     ),
@@ -203,7 +218,7 @@ Future<void> _openTeamProfile(String userId) async {
       return;
     }
 
-    final member = TeamModel.fromMap(doc.data()!);
+    final member = TeamModel.fromMap(id: doc.id, map: doc.data()!);
 
     Get.to(() => TeamProfileView(member: member));
   } catch (e) {

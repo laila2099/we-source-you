@@ -1,57 +1,108 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../core/services/payments/payment_service.dart';
-import '../core/services/payments/proposal_actions.dart';
-import '../core/services/payments/proposal_service.dart';
 import '../view/inbox/chat.dart';
 
-class PaymentSuccessPage extends StatelessWidget {
+class PaymentSuccessPage extends StatefulWidget {
   const PaymentSuccessPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<PaymentSuccessPage> createState() => _PaymentSuccessPageState();
+}
+
+class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
+  bool _navigated = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _start();
+      print("PaymentSuccessPage opened");
+      print("contractId param = ${Get.parameters['contractId']}");
+      print("currentUser = ${FirebaseAuth.instance.currentUser?.uid}");
+    });
+  }
+
+  Future<String> _getOrWaitConversationId(
+    String contractId, {
+    Duration timeout = const Duration(seconds: 25),
+  }) async {
+    final ref = FirebaseFirestore.instance
+        .collection('contracts')
+        .doc(contractId);
+
+    // 1) Read immediately once (in case the value already exists)
+    final first = await ref.get();
+    final cid1 = first.data()?['conversationId'];
+    if (cid1 is String && cid1.isNotEmpty) return cid1;
+
+    // 2) If not present, listen until it appears (with timeout)
+    return await ref
+        .snapshots()
+        .map((s) => s.data()?['conversationId'])
+        .where((cid) => cid is String && (cid as String).isNotEmpty)
+        .cast<String>()
+        .first
+        .timeout(timeout);
+  }
+
+  Future<void> _start() async {
     final contractId = Get.parameters['contractId'];
+
     if (contractId == null || contractId.isEmpty) {
-      return const Scaffold(body: Center(child: Text('Missing contractId')));
+      if (!mounted) return;
+      setState(() => _error = 'Missing contractId');
+      return;
     }
-    final actions = ProposalActions(ProposalService(), PaymentService());
 
-    return StreamBuilder(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, authSnap) {
-        if (authSnap.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: Text('Restoring session...')),
-          );
-        }
-        if (authSnap.data == null) {
-          return const Scaffold(
-            body: Center(child: Text('Session expired. Please login.')),
-          );
-        }
+    // One-time auth check
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (!mounted) return;
+      setState(() => _error = 'Session expired. Please login.');
+      return;
+    }
 
-        return StreamBuilder<String>(
-          stream: actions.waitForConversationId(contractId),
-          builder: (context, snap) {
-            if (snap.hasError) {
-              return Scaffold(
-                body: Center(child: Text('Error: ${snap.error}')),
-              );
-            }
-            if (!snap.hasData) {
-              return const Scaffold(
-                body: Center(child: Text('Confirming payment...')),
-              );
-            }
+    try {
+      final conversationId = await _getOrWaitConversationId(contractId);
 
-            final conversationId = snap.data!;
-            print(conversationId);
-            return ChatPage(conversationId: conversationId);
-          },
-        );
-      },
-    );
+      if (!mounted) return;
+      if (_navigated) return;
+      _navigated = true;
+
+      // Safe navigation
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Get.off(() => ChatPage(conversationId: conversationId));
+      });
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() => _error = 'Timed out while confirming payment. Try again.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = 'Error: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(_error!, textAlign: TextAlign.center),
+          ),
+        ),
+      );
+    }
+
+    return const Scaffold(body: Center(child: Text('Confirming payment...')));
   }
 }

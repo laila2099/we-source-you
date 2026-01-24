@@ -11,6 +11,8 @@ class AppRoutes {
   static const team = "/team";
   static const myLibrary = "/my_library";
   static const paymentSuccess = "/payment-success";
+  static const inbox = "/inbox";
+  static const payoutSettings = "/payoutSettings";
 }
 
 //  static const home = '/home';

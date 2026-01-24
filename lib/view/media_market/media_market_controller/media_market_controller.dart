@@ -194,8 +194,9 @@ class MediaController extends GetxController {
 
   ///  ---------------------- Payment ----------------------
   Future<void> buy(String itemId, PaymentProvider provider) async {
-    final successUrl = 'http://localhost:62538/#/media';
-    final cancelUrl = 'http://localhost:62538/#/media';
+    final baseUrl = Uri.base.origin;
+    final successUrl = '$baseUrl/#/media';
+    final cancelUrl = '$baseUrl/#/media';
 
     print(itemId);
 
@@ -206,23 +207,6 @@ class MediaController extends GetxController {
       successUrl: successUrl,
       cancelUrl: cancelUrl,
     );
-
-    /* final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
-    print(itemId);
-    // print(PaymentContext.mediaMarket.name);
-
-    final res = await functions.httpsCallable('createCheckoutSession').call({
-      'context': 'mediaMarket',
-      'referenceId': itemId,
-      'successUrl': 'http://localhost:62538/#/media',
-      'cancelUrl': 'http://localhost:62538/#/media',
-    });
-
-    final data = Map<String, dynamic>.from(res.data as Map);
-    final url = data['url'] as String?;
-    if (url == null || url.isEmpty) throw Exception('Missing checkout url');
-
-    html.window.location.href = url;*/
   }
 
   Future<void> downloadPurchase(String purchaseId) async {

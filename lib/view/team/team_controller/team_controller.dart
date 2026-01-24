@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:get/get.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
 import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/routes/app_routes.dart';
 
@@ -44,7 +45,7 @@ class TeamController extends GetxController {
         .listen(
           (snapshot) {
             featuredTeam.value = snapshot.docs
-                .map((doc) => TeamModel.fromMap(doc.data()))
+                .map((doc) => TeamModel.fromMap(id: doc.id, map: doc.data()))
                 .toList();
           },
           onError: (e) {
@@ -61,9 +62,10 @@ class TeamController extends GetxController {
         .snapshots()
         .listen(
           (snapshot) {
-            allTeam.value = snapshot.docs
-                .map((doc) => TeamModel.fromMap(doc.data()))
-                .toList();
+            allTeam.value = snapshot.docs.map((doc) {
+              print(doc.id);
+              return TeamModel.fromMap(id: doc.id, map: doc.data());
+            }).toList();
             // Initialize visible list
             _recomputeVisible();
           },

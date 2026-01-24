@@ -289,7 +289,7 @@ class JobsController extends GetxController {
     return '?';
   }
 
-  Future<void> testJobContract(
+  Future<void> acceptAndPayProposal(
     String proposalId,
     PaymentProvider provider,
   ) async {
@@ -298,7 +298,7 @@ class JobsController extends GetxController {
     await actions.acceptAndPayWeb(
       proposalId: proposalId,
       provider: provider,
-      baseUrl: 'http://localhost:62538',
+      baseUrl: Uri.base.origin,
     );
   }
 

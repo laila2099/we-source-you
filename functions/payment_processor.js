@@ -1,4 +1,6 @@
 // functions/src/payment_processor.js
+const { HttpsError } = require('firebase-functions/v2/https');
+
 const admin = require('firebase-admin');
 const db = admin.firestore();
 
@@ -11,6 +13,47 @@ function toNumber(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
+
+function resolvePayoutFromUser(u) {
+  const profiles = (u.payoutProfile && typeof u.payoutProfile === 'object')
+    ? u.payoutProfile
+    : {};
+
+  const def = (u.payoutDefault || '').toString();
+
+  const provider = (def === 'paypal' || def === 'stripe')
+    ? def
+    : (profiles.paypal?.enabled && profiles.paypal?.paypalEmail)
+        ? 'paypal'
+        : (profiles.stripe?.enabled && profiles.stripe?.stripeConnectAccountId)
+            ? 'stripe'
+            : null;
+
+  if (!provider) return { ok: false, reason: 'Payout setup required' };
+
+  if (provider === 'paypal') {
+    const email = profiles.paypal?.paypalEmail || null;
+    if (!email) return { ok: false, reason: 'PayPal payout not setup' };
+    return {
+      ok: true,
+      payoutProvider: 'paypal',
+      destination: { paypalPayoutEmail: email },
+    };
+  }
+
+  if (provider === 'stripe') {
+    const acct = profiles.stripe?.stripeConnectAccountId || null;
+    if (!acct) return { ok: false, reason: 'Stripe payout not setup' };
+    return {
+      ok: true,
+      payoutProvider: 'stripe',
+      destination: { stripeConnectAccountId: acct },
+    };
+  }
+
+  return { ok: false, reason: 'Unsupported payout provider' };
+}
+
 
 /**
  * Idempotent payment apply:
@@ -132,6 +175,49 @@ async function applyPaymentSucceeded({
         },
         { merge: true }
       );
+
+      const u = uSnap.exists ? (uSnap.data() || {}) : {};
+
+      const resolved = resolvePayoutFromUser(u);
+      if (!resolved.ok) {
+        throw new HttpsError('failed-precondition', resolved.reason);
+      }
+
+      const payoutProfile = resolved.payoutProvider === 'paypal'
+      ? { provider: 'paypal', paypalEmail: resolved.destination.paypalPayoutEmail }
+      : { provider: 'stripe', stripeConnectAccountId: resolved.destination.stripeConnectAccountId };
+
+      let payoutProvider = payoutProfile.provider;
+        let destination = null;
+
+        if (payoutProvider === 'paypal') {
+          if (!payoutProfile.paypalEmail) throw new Error('mediaMarket: missing paypalEmail');
+          destination = { paypalPayoutEmail: payoutProfile.paypalEmail };
+        } else if (payoutProvider === 'stripe') {
+          if (!payoutProfile.stripeConnectAccountId) throw new Error('mediaMarket: missing stripeConnectAccountId');
+          destination = { stripeConnectAccountId: payoutProfile.stripeConnectAccountId };
+        } else {
+          throw new Error('mediaMarket: unsupported payout provider');
+        }
+
+      const payoutId = `mm_${provider}_${paymentId}`; // idempotent
+      const payoutRef = db.collection('payouts').doc(payoutId);
+
+       tx.set(payoutRef, {
+          context: 'mediaMarket',
+          purchaseId,
+          sellerId,
+          payoutProvider,
+          destination,
+          amount: sellerNet,
+          currency: currency || item.currency || 'EUR',
+          status: 'queued',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+      tx.set(purchaseRef, { payoutId, payoutStatus: 'queued' }, { merge: true });
+
   
       // 5) increment seller paidCount (first time => 50%)
       tx.set(
@@ -257,6 +343,114 @@ if (context === 'jobContract') {
   return { ok: true, applied: 'jobContract' };
 }
 
+// داخل applyPaymentSucceeded في payment_processor.js
+if (context === 'hireMe') {
+  const contractRef = db.collection('contracts').doc(referenceId);
+  const paymentRefDoc = db.collection('payments').doc(paymentId);
+
+  await db.runTransaction(async (tx) => {
+    const cSnap = await tx.get(contractRef);
+    if (!cSnap.exists) return;
+
+    const c = cSnap.data();
+    if (c.type !== 'hireMe') return;
+
+    const freelancerId = c.freelancerId;
+    const clientId = c.clientId;
+    if (!freelancerId || !clientId) throw new Error('hireMe: missing freelancerId/clientId');
+
+    // -------- Phase 1: initial payment -> chatUnlocked --------
+    if (c.status === 'paymentPendingInitial') {
+      const initialGross = toNumber(amount) ?? toNumber(c.initialAmount) ?? toNumber(c.grossAmount);
+      if (initialGross == null || initialGross <= 0) throw new Error('hireMe: invalid initial gross');
+
+      const convId = c.conversationId || db.collection('conversations').doc().id;
+
+      tx.update(contractRef, {
+        status: 'chatUnlocked',
+        hireStage: 'chatUnlocked',
+        paidAmount: initialGross,          // paid so far
+        grossAmount: c.grossAmount ?? initialGross, // still initial (will be overwritten when accepting offer)
+        provider,
+        paymentRef: paymentId,             // latest payment ref (initial)
+        conversationId: convId,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      if (!c.conversationId) {
+        const convRef = db.collection('conversations').doc(convId);
+        tx.set(convRef, {
+          contractId: referenceId,
+          participants: [clientId, freelancerId],
+          status: 'open',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastMessageText: '✅ Chat unlocked (first unit paid)',
+          lastMessageSenderId: clientId,
+          unread: { [clientId]: 0, [freelancerId]: 1 },
+        });
+      }
+
+      // link payment to contract
+      tx.set(paymentRefDoc, { contractId: referenceId, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+
+      return;
+    }
+
+    // -------- Phase 2: remaining payment -> funded + fees --------
+    if (c.status === 'paymentPendingRemaining') {
+      const finalGross = toNumber(amount) ?? toNumber(c.grossAmount);
+      // ملاحظة: بالعادة amount هنا = remaining فقط،
+      // فالأصح نستخدم c.grossAmount (المجموع النهائي) لأنه اتقفل عند acceptOffer
+      const totalGross = toNumber(c.grossAmount);
+      if (totalGross == null || totalGross <= 0) throw new Error('hireMe: invalid totalGross');
+
+      // fee tier based on freelancer paidCount (same as jobContract)
+      const userRef = db.collection('users').doc(freelancerId);
+      const uSnap = await tx.get(userRef);
+      const u = uSnap.exists ? uSnap.data() : {};
+
+      const paidCount = Number(u?.freelancerStats?.paidCount ?? 0);
+      const feeRate = computeFeeRate(paidCount);
+      const { platformFee, net } = computeFees(totalGross, feeRate);
+
+      tx.update(contractRef, {
+        status: 'funded',
+        fundedAt: admin.firestore.FieldValue.serverTimestamp(),
+        provider,
+        paymentRef: paymentId, // latest payment ref (remaining)
+        paidAmount: totalGross,
+        platformFeeRate: feeRate,
+        platformFee,
+        freelancerNet: net,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // increment paidCount ONCE per funded contract
+      const prevFirstPaidAt = u?.freelancerStats?.firstPaidAt ?? null;
+      tx.set(userRef, {
+        freelancerStats: {
+          paidCount: paidCount + 1,
+          firstPaidAt: paidCount === 0 ? admin.firestore.FieldValue.serverTimestamp() : prevFirstPaidAt,
+        },
+      }, { merge: true });
+
+      tx.set(paymentRefDoc, { contractId: referenceId, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+
+      return;
+    }
+
+    // If already chatUnlocked/funded/etc => ignore (idempotency at status level)
+    return;
+  });
+
+  await db.collection('payments').doc(paymentId).update({
+    processed: true,
+    processedAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return { ok: true, applied: 'hireMe' };
+}
 
   // hireMe later (chatUnlocked + confirmAgreement + refund rules)
   return { ok: true, applied: 'no-op-unsupported-context-yet' };
