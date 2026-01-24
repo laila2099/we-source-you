@@ -1,31 +1,39 @@
-const functions = require('firebase-functions');
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
-const db = admin.firestore();
 
-exports.adminReviewKyc = functions.https.onCall(async (data, context) => {
-  // 1. Verify Admin Role (Assuming custom claims or a DB lookup)
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required');
+exports.onKycStatusChange = onDocumentUpdated('users/{uid}', async (event) => {
+  const before = event.data.before.data;
+  const after = event.data.after.data;
 
-  // Check if caller is admin via Firestore (Secure method)
-  const adminDoc = await db.collection('users').doc(context.auth.uid).get();
-  if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
-    throw new functions.https.HttpsError('permission-denied', 'Admins only.');
-  }
+  if (before.kycStatus === after.kycStatus) return;
 
-  const { targetUserId, decision, reason } = data; // decision: 'approve' | 'reject'
+  const uid = event.params.uid;
 
-  if (!targetUserId || !['approve', 'reject'].includes(decision)) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid parameters');
-  }
+  const statusText =
+    after.kycStatus === 'approved'
+      ? 'Your KYC has been approved ✅'
+      : 'Your KYC has been rejected ❌';
 
-  const updates = {
-    'kyc.status': decision === 'approve' ? 'approved' : 'rejected',
-    'kyc.verifiedAt': decision === 'approve' ? admin.firestore.FieldValue.serverTimestamp() : null,
-    'kyc.reviewedBy': context.auth.uid,
-    'kyc.rejectionReason': reason || null,
-  };
+  // خزّن الإشعار
+  await admin.firestore().collection('notifications').add({
+    userId: uid,
+    title: 'KYC Update',
+    body: statusText,
+    type: 'kyc',
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    read: false,
+  });
 
-  await db.collection('users').doc(targetUserId).update(updates);
+  // FCM
+  const userDoc = await admin.firestore().collection('users').doc(uid).get();
+  const fcmToken = userDoc.data()?.fcmToken;
+  if (!fcmToken) return;
 
-  return { success: true };
+  await admin.messaging().send({
+    token: fcmToken,
+    notification: {
+      title: 'KYC Update',
+      body: statusText,
+    },
+  });
 });

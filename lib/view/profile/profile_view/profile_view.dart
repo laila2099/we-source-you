@@ -4,6 +4,7 @@ import 'package:we_source_you/core/constant/app_color.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/routes/app_routes.dart';
 import 'package:we_source_you/view/auth/auth_controller/auth_controller.dart';
+import 'package:we_source_you/view/notifications/notifications_view.dart';
 import 'package:we_source_you/view/profile/profile_cotroller/profile_controller.dart';
 import 'package:we_source_you/model/job_post_model.dart';
 import 'package:we_source_you/view/jobs/job_proposals/job_proposals_view.dart';
@@ -105,6 +106,15 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            IconButton(
+              icon: const Icon(Icons.notifications),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => NotificationsPage()),
+                );
+              },
+            ),
             TextButton(
               onPressed: () {
                 Get.toNamed(AppRoutes.kyc);

@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:we_source_you/routes/app_routes.dart';
 import 'package:we_source_you/view/auth/auth_controller/auth_controller.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:html' as html;
 
 class SignInController extends GetxController {
   var email = ''.obs;
@@ -17,6 +19,29 @@ class SignInController extends GetxController {
   final box = GetStorage();
 
   void toggleRememberMe(bool value) => rememberMe.value = value;
+  Future<void> _saveFcmToken(String uid) async {
+    try {
+      // اطلب إذن الإشعارات
+      final permission = await html.Notification.requestPermission();
+      if (permission != 'granted') {
+        print("User denied notifications");
+        return;
+      }
+
+      final token = await FirebaseMessaging.instance.getToken(
+        vapidKey: "YOUR_WEB_PUSH_CERTIFICATE_KEY_PAIR_VAPID_KEY",
+      );
+
+      if (token != null) {
+        await _firestore.collection('users').doc(uid).set({
+          'fcmToken': token,
+        }, SetOptions(merge: true));
+        print("FCM token saved for user $uid");
+      }
+    } catch (e) {
+      print("Failed to save FCM token: $e");
+    }
+  }
 
   Future<void> signIn() async {
     final emailTrimmed = email.value.trim();
@@ -67,6 +92,7 @@ class SignInController extends GetxController {
       if (Get.isRegistered<AuthController>()) {
         await Get.find<AuthController>().refreshAuthState();
       }
+      await _saveFcmToken(user.uid);
 
       Get.back(result: true);
     } on FirebaseAuthException catch (e) {

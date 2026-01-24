@@ -31,7 +31,6 @@
 
   <title>we_source_you</title>
   <link rel="manifest" href="manifest.json">
-  
 </head>
 <body>
 
@@ -41,45 +40,44 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics.js"></script>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDajmD1rRk4N6hg1MfRvy6d78t5b6s_S7Q",
-      authDomain: "we-source-you.firebaseapp.com",
-      projectId: "we-source-you",
-      storageBucket: "we-source-you.firebasestorage.app",
-      messagingSenderId: "477012196994",
-      appId: "1:477012196994:web:c239148f8c9b2b4fbb7e9b",
-      measurementId: "G-9RT4KSYDLH"
-    };
+  <script type="module">
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging.js";
 
-    firebase.initializeApp(firebaseConfig);
-    firebase.analytics();
-  </script>
-  <!-- مكان الـ Div لكريب Sumsub -->
-<div id="sumsub-websdk-container"></div>
-
-<script src="https://static.sumsub.com/idensic/static/sns-websdk-builder.js"></script>
-<script>
-  window.launchSumsub = function (token) {
-    if (!window.snsWebSdk) {
-      console.error('Sumsub SDK not loaded');
-      return;
-    }
-
-    const sdk = window.snsWebSdk
-      .init(token)
-      .withConf({
-        lang: 'en',
-        theme: 'light',
-      })
-      .build();
-
-    sdk.launch('#sumsub-websdk-container');
+  const firebaseConfig = {
+    apiKey: "AIzaSyDajmD1rRk4N6hg1MfRvy6d78t5b6s_S7Q",
+    authDomain: "we-source-you.firebaseapp.com",
+    projectId: "we-source-you",
+    storageBucket: "we-source-you.firebasestorage.app",
+    messagingSenderId: "477012196994",
+    appId: "1:477012196994:web:c239148f8c9b2b4fbb7e9b",
+    measurementId: "G-9RT4KSYDLH"
   };
+
+  const app = firebase.initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+
+  // طلب صلاحية الإشعارات
+  Notification.requestPermission().then((permission) => {
+    if (permission === 'granted') {
+      console.log("Notification permission granted.");
+      getToken(messaging, { vapidKey: "YOUR_WEB_VAPID_KEY" }).then((token) => {
+        console.log("FCM Token:", token);
+        // ممكن تخزن الـ token في Firestore للـ user الحالي
+      });
+    } else {
+      console.log("User denied notifications");
+    }
+  });
+
+  // استماع للإشعارات الواردة أثناء فتح الصفحة
+  onMessage(messaging, (payload) => {
+    console.log("Message received: ", payload);
+    // هنا ممكن تعمل Local Notification عبر JS أو Flutter interop
+  });
 </script>
 
-<script defer src="flutter_bootstrap.js"></script>
-
+  <!-- Flutter bootstrap -->
+  <script src="flutter_bootstrap.js" async></script>
 
 </body>
 </html>

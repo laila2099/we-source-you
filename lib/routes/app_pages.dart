@@ -34,10 +34,10 @@ final appPages = <GetPage>[
   GetPage(name: AppRoutes.post, page: () => JobPostScreen()),
   GetPage(name: AppRoutes.applyJob, page: () => JobApply()),
   GetPage(name: AppRoutes.team, page: () => TeamView()),
-  GetPage(name: AppRoutes.kyc, page: () => KycView()),
+  GetPage(name: AppRoutes.kyc, page: () => KYCUploadPage()),
   GetPage(
     name: AppRoutes.adminDashboard,
-    page: () => AdminDashboard(),
+    page: () => AdminKYCPage(),
     middlewares: [AdminMiddleware()],
   ),
 ];
