@@ -9,8 +9,6 @@ import 'package:we_source_you/view/jobs/jobs_controller/jobs_controller.dart';
 import 'package:we_source_you/widgets/circular_icon/Circular_icon.dart';
 import 'package:we_source_you/widgets/glass_morphism.dart';
 
-import '../../../widgets/payment_method_dialog.dart';
-
 class FeaturedJobsView extends StatelessWidget {
   FeaturedJobsView({super.key});
   final JobsController controller = Get.find<JobsController>();
@@ -221,15 +219,15 @@ class JobCard extends GetView<JobsController> {
                 // );
 
                 /// test
-                final provider = await showPaymentMethodDialog(context);
-                if (provider == null) {
-                  return;
-                }
-
-                await controller.acceptAndPayProposal(
-                  '7VI8kmfNRmlCOcgZU5Je',
-                  provider,
-                );
+                // final provider = await showPaymentMethodDialog(context);
+                // if (provider == null) {
+                //   return;
+                // }
+                //
+                // await controller.acceptAndPayProposal(
+                //   '7VI8kmfNRmlCOcgZU5Je',
+                //   provider,
+                // );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.lightBlue,
