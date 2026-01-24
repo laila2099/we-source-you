@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/core/constant/app_color.dart';
-import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
+import 'package:we_source_you/model/team_model.dart';
 import 'package:we_source_you/view/team/team_controller/team_controller.dart';
 import 'package:we_source_you/view/team/team_profile.dart';
 import 'package:we_source_you/widgets/circular_icon/circular_icon.dart';
 import 'package:we_source_you/widgets/glass_morphism.dart';
 
 class FeaturedteamlistsView extends GetView<TeamController> {
-  FeaturedteamlistsView({super.key});
+  const FeaturedteamlistsView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +97,7 @@ class FeaturedteamlistsView extends GetView<TeamController> {
 
 class TeamCard extends GetView<TeamController> {
   final TeamModel journalist;
-  const TeamCard({required this.journalist});
+  const TeamCard({super.key, required this.journalist});
 
   @override
   Widget build(BuildContext context) {
@@ -204,9 +204,9 @@ class TeamCard extends GetView<TeamController> {
           const SizedBox(height: 10),
 
           // Rates
-          _RateRow(label: 'Hourly', rate: journalist.hourlyRate),
-          _RateRow(label: 'Daily', rate: journalist.dailyRate),
-          _RateRow(label: 'Project', rate: journalist.projectRate),
+          _RateRow(label: 'Hourly', rate: '${journalist.hourlyRate}/Hour'),
+          _RateRow(label: 'Daily', rate: '${journalist.dailyRate}/Day'),
+          _RateRow(label: 'Project', rate: '${journalist.projectRate}/Project'),
           const SizedBox(height: 20),
 
           // View Profile Button

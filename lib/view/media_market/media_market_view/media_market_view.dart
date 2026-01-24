@@ -1,11 +1,12 @@
 import 'dart:typed_data';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:we_source_you/model/media_item.dart';
 import 'package:we_source_you/view/auth/auth_controller/auth_controller.dart';
 import 'package:we_source_you/view/media_market/media_market_controller/media_market_controller.dart';
@@ -235,9 +236,19 @@ class MediaView extends GetView<MediaController> {
                             final storageRef = FirebaseStorage.instance
                                 .ref()
                                 .child("media_items/${user.uid}/$fileName");
+
+                            await storageRef.putData(bytes);
                             final snapshot = await storageRef.putData(bytes);
                             final downloadUrl = await snapshot.ref
                                 .getDownloadURL();
+
+                            //  نحفظ مسار الملف (fileRef) بدل downloadUrl
+                            final fileRef = storageRef.fullPath;
+
+                            //  للمعاينة فقط  public/preview
+                            final previewUrl = (selectedType == "photo")
+                                ? await storageRef.getDownloadURL()
+                                : null;
 
                             // إنشاء مستند جديد للحصول على ID
                             final docRef = FirebaseFirestore.instance
@@ -273,8 +284,8 @@ class MediaView extends GetView<MediaController> {
                               "views": 0,
                               "rating": 0.0,
                               "ratingCount": 0,
-                              "imageUrl": newItem.imageUrl,
-                              "downloadUrl": downloadUrl,
+                              "fileRef": fileRef,
+                              "imageUrl": previewUrl,
                               "timestamp": FieldValue.serverTimestamp(),
                               "userId": user.uid,
                               "category": newItem.category,

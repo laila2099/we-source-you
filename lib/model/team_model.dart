@@ -10,6 +10,7 @@ const Map<String, Color> typeColors = {
 };
 
 class TeamModel {
+  final String id;
   final String initials;
   final Color initialsColor;
   final String name;
@@ -22,9 +23,9 @@ class TeamModel {
   final String projects;
   final String clients;
   final String years;
-  final String hourlyRate;
-  final String dailyRate;
-  final String projectRate;
+  final double hourlyRate;
+  final double dailyRate;
+  final double projectRate;
   final bool isCompany;
   final bool available;
 
@@ -46,11 +47,17 @@ class TeamModel {
     required this.projectRate,
     required this.isCompany,
     required this.available,
+    required this.id,
   });
 
-  factory TeamModel.fromMap(Map<String, dynamic> map) {
+  factory TeamModel.fromMap({
+    required String id,
+    required Map<String, dynamic> map,
+  }) {
     String type = (map['type'] ?? 'journalist').toLowerCase();
+
     return TeamModel(
+      id: id,
       initials: map['name'] != null && map['name'].isNotEmpty
           ? map['name']
                 .toString()
@@ -70,9 +77,9 @@ class TeamModel {
       projects: map['projects']?.toString() ?? '0',
       clients: map['clients']?.toString() ?? '0',
       years: map['years']?.toString() ?? '0',
-      hourlyRate: map['hourlyRate'] ?? '0.00/hr',
-      dailyRate: map['dailyRate'] ?? '0.00/day',
-      projectRate: map['projectRate'] ?? '0.00',
+      hourlyRate: (map['hourlyRate'] ?? 0).toDouble(),
+      dailyRate: (map['dailyRate'] ?? 0).toDouble(),
+      projectRate: (map['projectRate'] ?? 0).toDouble(),
       isCompany: type == 'company',
       available: map['available'] ?? false,
     );

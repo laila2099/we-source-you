@@ -178,9 +178,9 @@ Future<void> showProposalPaymentSheet(ProposalModel proposal) async {
   }
 
   // 2. حقن الكونترولر إذا لم يكن موجوداً
-  if (!Get.isRegistered<PaymentController>()) {
-    Get.put(PaymentController());
-  }
+  // if (!Get.isRegistered<PaymentController>()) {
+  //   Get.put(PaymentController());
+  // }
 
   // 3. إظهار الـ Sheet الجديد
   Get.bottomSheet(
@@ -218,7 +218,7 @@ class PaymentSummarySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // استدعاء الكونترولر الذي بنيناه سابقاً
-    final PaymentController controller = Get.find<PaymentController>();
+    // final PaymentController controller = Get.find<PaymentController>();
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -287,7 +287,9 @@ class PaymentSummarySheet extends StatelessWidget {
             icon: Icons.credit_card,
             label: "Credit Card (Stripe)",
             color: Colors.deepPurple,
-            onTap: () => _handlePayment(controller, PaymentMethod.stripe),
+            onTap: () {
+              // _handlePayment(controller, PaymentMethod.stripe);
+            },
           ),
 
           const SizedBox(height: 10),
@@ -297,7 +299,9 @@ class PaymentSummarySheet extends StatelessWidget {
             icon: Icons.paypal,
             label: "PayPal",
             color: Colors.blue,
-            onTap: () => _handlePayment(controller, PaymentMethod.paypal),
+            onTap: () {
+              // _handlePayment(controller, PaymentMethod.paypal);
+            },
           ),
         ],
       ),
@@ -305,36 +309,36 @@ class PaymentSummarySheet extends StatelessWidget {
   }
 
   void _handlePayment(
-    PaymentController controller,
+    // PaymentController controller,
     PaymentMethod method,
   ) async {
     // 1. إغلاق الـ Sheet لتجنب التكرار
-    Get.back();
-
-    // 2. استدعاء دالة الدفع من الكونترولر
-    final result = await controller.initiateMarketplacePayment(
-      type: MarketItemType.proposal, // نوع الدفع
-      method: method,
-      proposalId: proposalId,
-      jobId: jobId,
-      amount: amount,
-      // يمكن إضافة hireType إذا كان متوفراً
-    );
-
-    // 3. التعامل مع النتيجة (الكونترولر يقوم بالدفع والحجز)
-    if (result.success) {
-      // هنا يتم توجيه المستخدم للشات لأن الدفع تم حجزه بنجاح
-      // ويتم تحديث حالة الـ Proposal في الباك إند عبر الـ Webhook
-      Get.snackbar(
-        "Success",
-        "Funds secured! Opening chat...",
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-
-      // التوجيه إلى صفحة الشات
-      // Get.to(() => ChatScreen(jobId: jobId));
-    }
+    // Get.back();
+    //
+    // // 2. استدعاء دالة الدفع من الكونترولر
+    // final result = await controller.initiateMarketplacePayment(
+    //   type: MarketItemType.proposal, // نوع الدفع
+    //   method: method,
+    //   proposalId: proposalId,
+    //   jobId: jobId,
+    //   amount: amount,
+    //   // يمكن إضافة hireType إذا كان متوفراً
+    // );
+    //
+    // // 3. التعامل مع النتيجة (الكونترولر يقوم بالدفع والحجز)
+    // if (result.success) {
+    //   // هنا يتم توجيه المستخدم للشات لأن الدفع تم حجزه بنجاح
+    //   // ويتم تحديث حالة الـ Proposal في الباك إند عبر الـ Webhook
+    //   Get.snackbar(
+    //     "Success",
+    //     "Funds secured! Opening chat...",
+    //     backgroundColor: Colors.green,
+    //     colorText: Colors.white,
+    //   );
+    //
+    //   // التوجيه إلى صفحة الشات
+    //   // Get.to(() => ChatScreen(jobId: jobId));
+    // }
   }
 }
 

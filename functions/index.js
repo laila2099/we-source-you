@@ -1,41 +1,63 @@
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-// Stripe Functions
-exports.createStripeEscrow = require('./stripe').createStripeEscrow;
-exports.releaseStripePayment = require('./stripe').releaseStripePayment;
+exports.ping = require('./debug').ping;
 
-// PayPal Functions
-exports.createPaypalEscrow = require('./paypal').createPaypalEscrow;
-exports.capturePaypalAuthorization = require('./paypal').capturePaypalAuthorization;
-exports.releasePaypalPayment = require('./paypal').releasePaypalPayment;
+exports.createPaymentIntent = require('./payments').createPaymentIntent;
+exports.createCheckoutSession = require('./payments').createCheckoutSession;
+exports.webhooksStripeDev = require('./payments').webhooksStripeDev;
 
-// Webhook Handlers
-exports.stripeWebhook = require('./webhooks').stripeWebhook;
-exports.paypalWebhook = require('./webhooks').paypalWebhook;
+exports.createPayPalOrder = require('./paypal/createPayPalOrder').createPayPalOrder;
+exports.webhooksPaypalDev = require('./paypal/paypalWebhook').webhooksPaypalDev;
 
-// Refund & Dispute Functions
-exports.processFullRefund = require('./refunds').processFullRefund;
-exports.processPartialRefund = require('./refunds').processPartialRefund;
-exports.handleDispute = require('./refunds').handleDispute;
+exports.acceptProposal = require('./proposals').acceptProposal;
 
-// Payout Functions
-exports.processAutoPayout = require('./payouts').processAutoPayout;
-exports.autoPayoutAfterDisputePeriod = require('./payouts').autoPayoutAfterDisputePeriod;
 
-// Marketplace Payment Functions
-exports.createMediaPaymentIntent = require('./marketplace_payments').createMediaPaymentIntent;
-exports.createHiringPaymentIntent = require('./marketplace_payments').createHiringPaymentIntent;
-exports.createProposalPaymentIntent = require('./marketplace_payments').createProposalPaymentIntent;
-exports.createMediaPayPalOrder = require('./marketplace_payments').createMediaPayPalOrder;
-exports.createHiringPayPalOrder = require('./marketplace_payments').createHiringPayPalOrder;
-exports.createProposalPayPalOrder = require('./marketplace_payments').createProposalPayPalOrder;
-exports.capturePayPalPayment = require('./marketplace_payments').capturePayPalPayment;
 
-// Release payment functions (after work completion)
-exports.releaseMediaPayment = require('./release_marketplace_payments').releaseMediaPayment;
-exports.releaseHiringPayment = require('./release_marketplace_payments').releaseHiringPayment;
-exports.releaseProposalPayment = require('./release_marketplace_payments').releaseProposalPayment;
+exports.getDownloadUrl = require('./downloads').getDownloadUrl;
+exports.getDeliveryDownloadUrlByConversation = require('./downloads').getDeliveryDownloadUrlByConversation;
+
+
+exports.submitDeliveryByConversation = require('./contracts').submitDeliveryByConversation;
+exports.approveDeliveryByConversation = require('./contracts').approveDeliveryByConversation;
+exports.confirmCloseByConversation = require('./contracts').confirmCloseByConversation;
+exports.openDisputeByConversation = require('./contracts').openDisputeByConversation;
+exports.releasePayout = require('./contracts').releasePayout;
+
+//exports.autoApproveSubmitted = require('./contracts').autoApproveSubmitted;
+//exports.autoPayoutAfterClientApprove = require('./contracts').autoPayoutAfterClientApprove;
+exports.rejectDeliveryByConversation = require('./contracts').rejectDeliveryByConversation;
+
+
+exports.submitDisputeMessageByConversation =
+  require('./disputes').submitDisputeMessageByConversation;
+
+exports.getDisputeAttachmentUrlByConversation =
+  require('./disputes').getDisputeAttachmentUrlByConversation;
+
+
+exports.createHireMeContract = require('./hireme').createHireMeContract;
+exports.sendHireOfferByConversation = require('./hireme').sendHireOfferByConversation;
+exports.acceptHireOfferPrepareRemainingPayment = require('./hireme').acceptHireOfferPrepareRemainingPayment;
+exports.cancelHireNoAgreementByConversation = require('./hireme').cancelHireNoAgreementByConversation;
+exports.rejectHireOfferByConversation =
+  require('./hireme').rejectHireOfferByConversation;
+
+
+exports.setPayoutProfilePayPal =
+    require('./payouts_setup').setPayoutProfilePayPal;
+
+exports.createStripeAccountLink =
+    require('./payouts_setup').createStripeAccountLink;
+
+exports.sendPayout =
+    require('./payouts').sendPayout;
+exports.getPayoutSettings = require('./payouts').getPayoutSettings;
+exports.setDefaultPayoutProvider = require('./payouts').setDefaultPayoutProvider;
+exports.autoSendPayoutOnQueuedCreated = require('./payouts').autoSendPayoutOnQueuedCreated;
+
+
+
 
 // KYC
 exports.createSumsubAccessToken = require('./sumsub').createSumsubAccessToken;

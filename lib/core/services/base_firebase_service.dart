@@ -13,9 +13,7 @@
 //   }
 // }
 
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:we_source_you/model/payment_models.dart';
-
+/*
 class PaymentService {
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
@@ -218,3 +216,4 @@ class PaymentService {
     });
   }
 }
+*/

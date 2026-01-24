@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/model/media_item.dart';
 import 'package:we_source_you/view/jobs/job_proposals/job_proposals_view.dart';
 import 'package:we_source_you/view/media_market/media_market_controller/media_market_controller.dart';
@@ -9,6 +11,8 @@ import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/core/services/payment_controller.dart';
 import 'package:we_source_you/widgets/rating.dart';
+
+import '../widgets/buy_or_download_button.dart';
 
 class MediaDetailPage extends StatefulWidget {
   final MediaItem item;
@@ -318,7 +322,7 @@ class _MediaDetailPageState extends State<MediaDetailPage> {
           Center(
             child: SizedBox(
               width: 200,
-              child: WebHoverButton(text: "Buy Now", onPressed: _buyProject),
+              child: BuyOrDownloadButton(itemId: widget.item.id!),
             ),
           ),
         ],
@@ -340,11 +344,11 @@ class _MediaDetailPageState extends State<MediaDetailPage> {
     }
 
     // Initialize PaymentController if not already initialized
-    if (!Get.isRegistered<PaymentController>()) {
+    /*    if (!Get.isRegistered<PaymentController>()) {
       Get.put(PaymentController());
     }
 
-    final paymentController = Get.find<PaymentController>();
+    final paymentController = Get.find<PaymentController>();*/
 
     // Show payment summary sheet
     Get.bottomSheet(
