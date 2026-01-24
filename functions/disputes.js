@@ -3,82 +3,164 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 
 const db = admin.firestore();
+const bucket = admin.storage().bucket();
 
-exports.openDispute = onCall({ cors: true, invoker: 'public' }, async (request) => {
+function requireAuth(request) {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Login required');
+  return uid;
+}
 
-  const { contractId, reason } = request.data || {};
-  if (!contractId) throw new HttpsError('invalid-argument', 'contractId is required');
+function assertString(v, name) {
+  if (!v || typeof v !== 'string') {
+    throw new HttpsError('invalid-argument', `${name} is required`);
+  }
+}
 
-  const contractRef = db.collection('contracts').doc(contractId);
+function isObject(v) {
+  return v && typeof v === 'object' && !Array.isArray(v);
+}
 
-  const disputeId = await db.runTransaction(async (tx) => {
-    const cSnap = await tx.get(contractRef);
-    if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
+// ✅ submit dispute message (text + attachments)
+exports.submitDisputeMessageByConversation = onCall(
+  { cors: true, invoker: 'public' },
+  async (request) => {
+    const uid = requireAuth(request);
 
-    const c = cSnap.data();
+    const { conversationId, text, attachments } = request.data || {};
+    assertString(conversationId, 'conversationId');
 
-    // ✅ only participants
-    const isClient = c.clientId === uid;
-    const isFreelancer = c.freelancerId === uid;
-    if (!isClient && !isFreelancer) {
-      throw new HttpsError('permission-denied', 'Not allowed');
+    const msgText = (typeof text === 'string') ? text.trim() : '';
+    const files = Array.isArray(attachments) ? attachments : [];
+
+    if (!msgText && files.length === 0) {
+      throw new HttpsError('invalid-argument', 'Provide text or attachments');
     }
 
-    // ✅ allow dispute only after paidOut (MVP)
-    if (c.status !== 'paidOut') {
-      throw new HttpsError('failed-precondition', 'Dispute allowed only after paidOut');
+    // Validate attachments shape quickly
+    for (const a of files) {
+      if (!isObject(a)) throw new HttpsError('invalid-argument', 'attachments must be objects');
+      if (typeof a.fileRef !== 'string' || !a.fileRef.trim()) {
+        throw new HttpsError('invalid-argument', 'Each attachment must have fileRef');
+      }
+      if (typeof a.name !== 'string' || !a.name.trim()) {
+        throw new HttpsError('invalid-argument', 'Each attachment must have name');
+      }
+      // optional: size
+      if (a.size != null && !Number.isFinite(Number(a.size))) {
+        throw new HttpsError('invalid-argument', 'attachment.size must be a number');
+      }
     }
 
-    // ✅ deadline check
-    const deadline = c.disputeDeadline; // Firestore Timestamp
-    if (!deadline) throw new HttpsError('failed-precondition', 'Missing disputeDeadline');
+    await db.runTransaction(async (tx) => {
+      const convRef = db.collection('conversations').doc(conversationId);
+      const convSnap = await tx.get(convRef);
+      if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
 
-    const now = admin.firestore.Timestamp.now();
-    if (now.toMillis() > deadline.toMillis()) {
-      throw new HttpsError('failed-precondition', 'Dispute window expired');
-    }
+      const conv = convSnap.data();
 
-    // ✅ idempotent: if already disputeOpen, return existing disputeId if stored
-    if (c.status === 'disputeOpen' && c.disputeId) {
-      return c.disputeId;
-    }
+      const participants = Array.isArray(conv.participants) ? conv.participants : [];
+      if (!participants.includes(uid)) {
+        throw new HttpsError('permission-denied', 'Not a participant');
+      }
 
-    const disputeRef = db.collection('disputes').doc();
-    const openedBy = uid;
+      const status = (conv.status || 'open').toString();
+      if (status !== 'disputeOpen') {
+        throw new HttpsError('failed-precondition', `Conversation not in dispute_open. status=${status}`);
+      }
 
-    tx.set(disputeRef, {
-      contractId,
-      openedBy,
-      reason: typeof reason === 'string' ? reason.trim() : null,
-      status: 'dispute_opened',
-      openedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+      // ✅ security: attachments must belong to this conversation folder
+      // we expect: disputes/{conversationId}/...
+      for (const a of files) {
+        const ref = a.fileRef.trim();
+        if (!ref.startsWith(`disputes/${conversationId}/`)) {
+          throw new HttpsError('permission-denied', 'attachment fileRef not allowed for this conversation');
+        }
+      }
 
-    // update contract + conversation
-    tx.update(contractRef, {
-      status: 'disputeOpen',
-      disputeId: disputeRef.id,
-      disputeOpenedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+      const msgRef = convRef.collection('messages').doc();
 
-    if (c.conversationId) {
-      const convRef = db.collection('conversations').doc(c.conversationId);
-      tx.set(
-        convRef,
-        {
-          status: 'dispute_open',
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      tx.set(msgRef, {
+        type: 'dispute',
+        senderId: uid,
+        text: msgText || null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        meta: {
+          attachments: files.map((a) => ({
+            name: a.name.trim(),
+            fileRef: a.fileRef.trim(),
+            size: a.size != null ? Number(a.size) : null,
+          })),
         },
-        { merge: true }
-      );
+      });
+
+      // unread update
+      const otherUid = participants.find((p) => p !== uid) || null;
+      const unread = (conv.unread && typeof conv.unread === 'object') ? conv.unread : {};
+      const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
+
+      const lastText = files.length > 0
+        ? '📎 Dispute evidence'
+        : (msgText ? '⚠️ Dispute message' : '⚠️ Dispute update');
+
+      const patch = {
+        lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastMessageText: lastText,
+        lastMessageSenderId: uid,
+        [`unread.${uid}`]: 0,
+      };
+
+      if (otherUid) patch[`unread.${otherUid}`] = otherUnread + 1;
+
+      tx.set(convRef, patch, { merge: true });
+    });
+
+    return { ok: true };
+  }
+);
+
+
+// ✅ signed url for dispute attachment (download)
+exports.getDisputeAttachmentUrlByConversation = onCall(
+  { cors: true, invoker: 'public' },
+  async (request) => {
+    const uid = requireAuth(request);
+
+    const { conversationId, fileRef, filename } = request.data || {};
+    assertString(conversationId, 'conversationId');
+    assertString(fileRef, 'fileRef');
+
+    const convSnap = await db.collection('conversations').doc(conversationId).get();
+    if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
+
+    const conv = convSnap.data();
+    const participants = Array.isArray(conv.participants) ? conv.participants : [];
+    if (!participants.includes(uid)) {
+      // لاحقاً: support role
+      throw new HttpsError('permission-denied', 'Not a participant');
     }
 
-    return disputeRef.id;
-  });
+    const status = (conv.status || 'open').toString();
+    if (status !== 'disputeOpen') {
+      throw new HttpsError('failed-precondition', 'Not in dispute');
+    }
 
-  return { ok: true, disputeId };
-});
+    // ✅ must be inside disputes/{conversationId}/
+    if (!fileRef.startsWith(`disputes/${conversationId}/`)) {
+      throw new HttpsError('permission-denied', 'fileRef not allowed');
+    }
+
+    const safeName = (typeof filename === 'string' && filename.trim())
+      ? filename.trim()
+      : 'evidence';
+
+    const [url] = await bucket.file(fileRef).getSignedUrl({
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + 10 * 60 * 1000,
+      responseDisposition: `attachment; filename="${safeName}"`,
+    });
+
+    return { url };
+  }
+);

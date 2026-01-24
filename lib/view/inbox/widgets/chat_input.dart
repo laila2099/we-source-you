@@ -89,6 +89,7 @@ class _ChatInputState extends State<ChatInput> {
 
     setState(() => sending = true);
     try {
+      print(widget.conversationId);
       await widget.chat.sendText(
         conversationId: widget.conversationId,
         text: text,

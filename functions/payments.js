@@ -64,7 +64,26 @@ exports.createPaymentIntent = onCall(
       currency = (item.currency || 'EUR').toLowerCase();
       amount = Math.round(Number(item.price) * 100);
       payerId = uid;
-    } else {
+    }else if (context === 'hireMe') {
+       const snap = await db.collection('contracts').doc(referenceId).get();
+       if (!snap.exists) throw new HttpsError('not-found', 'Contract not found');
+       const c = snap.data();
+
+       if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can pay');
+
+       currency = (c.currency || 'EUR').toLowerCase();
+
+       // ✅ amount depends on stage/status
+       if (c.status === 'paymentPendingInitial') {
+         amount = Math.round(Number(c.initialAmount) * 100);
+       } else if (c.status === 'paymentPendingRemaining') {
+         amount = Math.round(Number(c.remainingDue) * 100);
+       } else {
+         throw new HttpsError('failed-precondition', `Not payable. status=${c.status}`);
+       }
+
+       payerId = c.clientId;
+} else {
       throw new HttpsError('invalid-argument', 'Unsupported context');
     }
 
@@ -132,7 +151,26 @@ exports.createCheckoutSession = onCall(
       currency = (item.currency || 'EUR').toLowerCase();
       amountCents = Math.round(Number(item.price) * 100);
       payerId = uid;
-    } else {
+    } else if (context === 'hireMe') {
+      const snap = await db.collection('contracts').doc(referenceId).get();
+      if (!snap.exists) throw new HttpsError('not-found', 'Contract not found');
+      const c = snap.data();
+
+      if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can pay');
+
+      currency = (c.currency || 'EUR').toLowerCase();
+
+      // ✅ amount depends on contract status
+      if (c.status === 'paymentPendingInitial') {
+        amountCents = Math.round(Number(c.initialAmount) * 100);
+      } else if (c.status === 'paymentPendingRemaining') {
+        amountCents = Math.round(Number(c.remainingDue) * 100);
+      } else {
+        throw new HttpsError('failed-precondition', `Not payable. status=${c.status}`);
+      }
+
+      payerId = c.clientId;
+} else {
       throw new HttpsError('invalid-argument', 'Unsupported context');
     }
 
@@ -149,7 +187,9 @@ exports.createCheckoutSession = onCall(
             currency,
             unit_amount: amountCents,
             product_data: {
-              name: context === 'jobContract' ? 'Job Contract Payment' : 'Media Item',
+              name: context === 'jobContract' ? 'Job Contract Payment'
+                      : context === 'hireMe' ? 'HireMe Payment'
+                      : 'Media Item',
             },
           },
         },
@@ -173,7 +213,7 @@ exports.createCheckoutSession = onCall(
 );
 
 // ✅ Webhook public + idempotent + موحد
-exports.stripeWebhook = onRequest(
+exports.webhooksStripeDev  = onRequest(
 { cors: true, invoker: 'public' }
 ,
   async (req, res) => {
@@ -182,6 +222,10 @@ exports.stripeWebhook = onRequest(
     if (!STRIPE_WEBHOOK_SECRET) return res.status(500).send('Missing webhook secret');
 
     let event;
+    console.log('CT', req.headers['content-type']);
+    console.log('rawBuffer?', Buffer.isBuffer(req.body), 'len=', req.body?.length);
+    console.log('rawBody?', req.rawBody ? (Buffer.isBuffer(req.rawBody) ? 'buffer' : typeof req.rawBody) : 'none');
+
     try {
       const sig = req.headers['stripe-signature'];
       event = stripe.webhooks.constructEvent(req.rawBody, sig, STRIPE_WEBHOOK_SECRET);

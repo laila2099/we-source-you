@@ -1,37 +1,60 @@
 const admin = require('firebase-admin');
 admin.initializeApp();
-//
-//exports.acceptProposal = require('./proposals').acceptProposal;
-//
-//exports.createPaymentIntent = require('./payments').createPaymentIntent;
-//exports.stripeWebhook = require('./payments').stripeWebhook;
-//exports.ping = require('./debug').ping;
-//
-//exports.createCheckoutSession = require('./payments').createCheckoutSession;
-//exports.createPayPalOrder =
-//  require('./paypal/createPayPalOrder').createPayPalOrder;
-//
-//exports.paypalWebhook =
-//  require('./paypal/paypalWebhook').paypalWebhook;
-//
 
 exports.ping = require('./debug').ping;
 
 exports.createPaymentIntent = require('./payments').createPaymentIntent;
 exports.createCheckoutSession = require('./payments').createCheckoutSession;
-exports.stripeWebhook = require('./payments').stripeWebhook;
+exports.webhooksStripeDev = require('./payments').webhooksStripeDev;
 
 exports.createPayPalOrder = require('./paypal/createPayPalOrder').createPayPalOrder;
-exports.paypalWebhook = require('./paypal/paypalWebhook').paypalWebhook;
+exports.webhooksPaypalDev = require('./paypal/paypalWebhook').webhooksPaypalDev;
 
 exports.acceptProposal = require('./proposals').acceptProposal;
 
-exports.submitDelivery = require('./contracts').submitDelivery;
-exports.approveDelivery = require('./contracts').approveDelivery;
-exports.confirmClose = require('./contracts').confirmClose;
-exports.releasePayout = require('./contracts').releasePayout;
 
 
 exports.getDownloadUrl = require('./downloads').getDownloadUrl;
+exports.getDeliveryDownloadUrlByConversation = require('./downloads').getDeliveryDownloadUrlByConversation;
+
+
+exports.submitDeliveryByConversation = require('./contracts').submitDeliveryByConversation;
+exports.approveDeliveryByConversation = require('./contracts').approveDeliveryByConversation;
+exports.confirmCloseByConversation = require('./contracts').confirmCloseByConversation;
+exports.openDisputeByConversation = require('./contracts').openDisputeByConversation;
+exports.releasePayout = require('./contracts').releasePayout;
+
+//exports.autoApproveSubmitted = require('./contracts').autoApproveSubmitted;
+//exports.autoPayoutAfterClientApprove = require('./contracts').autoPayoutAfterClientApprove;
+exports.rejectDeliveryByConversation = require('./contracts').rejectDeliveryByConversation;
+
+
+exports.submitDisputeMessageByConversation =
+  require('./disputes').submitDisputeMessageByConversation;
+
+exports.getDisputeAttachmentUrlByConversation =
+  require('./disputes').getDisputeAttachmentUrlByConversation;
+
+
+exports.createHireMeContract = require('./hireme').createHireMeContract;
+exports.sendHireOfferByConversation = require('./hireme').sendHireOfferByConversation;
+exports.acceptHireOfferPrepareRemainingPayment = require('./hireme').acceptHireOfferPrepareRemainingPayment;
+exports.cancelHireNoAgreementByConversation = require('./hireme').cancelHireNoAgreementByConversation;
+exports.rejectHireOfferByConversation =
+  require('./hireme').rejectHireOfferByConversation;
+
+
+exports.setPayoutProfilePayPal =
+    require('./payouts_setup').setPayoutProfilePayPal;
+
+exports.createStripeAccountLink =
+    require('./payouts_setup').createStripeAccountLink;
+
+exports.sendPayout =
+    require('./payouts').sendPayout;
+exports.getPayoutSettings = require('./payouts').getPayoutSettings;
+exports.setDefaultPayoutProvider = require('./payouts').setDefaultPayoutProvider;
+exports.autoSendPayoutOnQueuedCreated = require('./payouts').autoSendPayoutOnQueuedCreated;
+
 
 

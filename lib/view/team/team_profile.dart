@@ -313,9 +313,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/core/constant/app_color.dart';
 import 'package:we_source_you/model/team_model.dart';
-import 'package:we_source_you/view/jobs/job_proposals/job_proposals_view.dart';
 import 'package:we_source_you/widgets/circular_icon/circular_icon.dart';
 import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
+
+import '../../core/services/payments/hireme_service.dart';
+import '../../widgets/payment_method_dialog.dart';
 
 class TeamProfileView extends StatelessWidget {
   final TeamModel member;
@@ -330,32 +332,59 @@ class TeamProfileView extends StatelessWidget {
           children: [
             ListTile(
               title: const Text('Hourly'),
-              subtitle: Text(member.hourlyRate),
-              onTap: () {
+              subtitle: Text('${member.hourlyRate}/Hour'),
+              onTap: () async {
                 Get.back();
-                // _showPaymentSheet(
-                //   HireType.hourly,
-                //   _parseRate(member.hourlyRate),
-                // );
+
+                final provider = await showPaymentMethodDialog(context);
+                if (provider == null) return; // user closed dialog
+
+                final baseUrl = Uri.base.origin; // للويب ممتاز
+                print(Uri.base.origin);
+                await HireMeService().hireAndPayWeb(
+                  freelancerId: member.id,
+                  pricingType: 'hourly',
+                  provider: provider,
+                  baseUrl: baseUrl,
+                );
               },
             ),
             ListTile(
               title: const Text('Daily'),
-              subtitle: Text(member.dailyRate),
-              onTap: () {
+              subtitle: Text('${member.dailyRate}/Day'),
+              onTap: () async {
                 Get.back();
-                // _showPaymentSheet(HireType.daily, _parseRate(member.dailyRate));
+
+                final provider = await showPaymentMethodDialog(context);
+                if (provider == null) return; // user closed dialog
+
+                final baseUrl = Uri.base.origin; // للويب ممتاز
+                print(Uri.base.origin);
+                await HireMeService().hireAndPayWeb(
+                  freelancerId: member.id,
+                  pricingType: 'daily',
+                  provider: provider,
+                  baseUrl: baseUrl,
+                );
               },
             ),
             ListTile(
               title: const Text('Project'),
-              subtitle: Text(member.projectRate),
-              onTap: () {
+              subtitle: Text('${member.projectRate}/Project'),
+              onTap: () async {
                 Get.back();
-                // _showPaymentSheet(
-                //   HireType.project,
-                //   _parseRate(member.projectRate),
-                // );
+
+                final provider = await showPaymentMethodDialog(context);
+                if (provider == null) return; // user closed dialog
+
+                final baseUrl = Uri.base.origin; // للويب ممتاز
+                print(Uri.base.origin);
+                await HireMeService().hireAndPayWeb(
+                  freelancerId: member.id,
+                  pricingType: 'project',
+                  provider: provider,
+                  baseUrl: baseUrl,
+                );
               },
             ),
           ],
@@ -369,15 +398,14 @@ class TeamProfileView extends StatelessWidget {
     return double.tryParse(cleaned) ?? 0.0;
   }
 
-  void _showPaymentSheet(
-    // HireType hireType,
-    double rate,
-  ) {
-    /*   if (!Get.isRegistered<PaymentController>()) {
+  /*  void _showPaymentSheet(
+      // HireType hireType,
+      double rate,
+      ) {
+    */ /*   if (!Get.isRegistered<PaymentController>()) {
       Get.put(PaymentController());
     }
-
-    final paymentController = Get.find<PaymentController>();*/
+    final paymentController = Get.find<PaymentController>();*/ /*
     final teamId = member.name;
 
     Get.bottomSheet(
@@ -392,7 +420,7 @@ class TeamProfileView extends StatelessWidget {
       ),
       isScrollControlled: true,
     );
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -607,9 +635,15 @@ class TeamProfileView extends StatelessWidget {
                     children: [
                       Text('Rates', style: nameStyle),
                       const SizedBox(height: 10),
-                      _RateRow(label: 'Hourly', rate: member.hourlyRate),
-                      _RateRow(label: 'Daily', rate: member.dailyRate),
-                      _RateRow(label: 'Project', rate: member.projectRate),
+                      _RateRow(
+                        label: 'Hourly',
+                        rate: '${member.hourlyRate}/Hour',
+                      ),
+                      _RateRow(label: 'Daily', rate: '${member.dailyRate}/Day'),
+                      _RateRow(
+                        label: 'Project',
+                        rate: '${member.projectRate}/Project',
+                      ),
                       const SizedBox(height: 20),
                       Text('Reviews', style: nameStyle),
                       const SizedBox(height: 10),

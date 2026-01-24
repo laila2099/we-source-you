@@ -40,7 +40,23 @@ exports.createPayPalOrder = onCall(
       amount = Number(item.price).toFixed(2);
       currency = (item.currency || 'EUR').toUpperCase();
       payerId = uid;
-    } else {
+    } else if (context === 'hireMe') {
+      const snap = await db.collection('contracts').doc(referenceId).get();
+      if (!snap.exists) throw new HttpsError('not-found', 'Contract not found');
+      const c = snap.data();
+
+      if (c.clientId !== uid) throw new HttpsError('permission-denied');
+      currency = (c.currency || 'EUR').toUpperCase();
+      payerId = uid;
+
+      if (c.status === 'paymentPendingInitial') {
+        amount = Number(c.initialAmount).toFixed(2);
+      } else if (c.status === 'paymentPendingRemaining') {
+        amount = Number(c.remainingDue).toFixed(2);
+      } else {
+        throw new HttpsError('failed-precondition', `Not payable. status=${c.status}`);
+      }
+} else {
       throw new HttpsError('invalid-argument', 'Unsupported context');
     }
 

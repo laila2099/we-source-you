@@ -7,7 +7,7 @@ const { applyPaymentSucceeded } = require('../payment_processor');
 
 const db = admin.firestore();
 
-exports.paypalWebhook = onRequest({ cors: true, invoker: 'public' }, async (req, res) => {
+exports.webhooksPaypalDev = onRequest({ cors: true, invoker: 'public' }, async (req, res) => {
   let event;
   try {
     event = typeof req.body === 'object'

@@ -16,4 +16,17 @@ class PayoutService {
     // يرجع providerPayoutRef (transferId أو payoutBatchId)
     return data['providerPayoutRef'] as String?;
   }
+
+  Future<Map<String, dynamic>> getPayoutSettings() async {
+    final res = await FirebaseFunctions.instance
+        .httpsCallable('getPayoutSettings')
+        .call({});
+    return Map<String, dynamic>.from(res.data);
+  }
+
+  Future<void> setDefaultPayoutProvider(String provider) async {
+    await FirebaseFunctions.instance
+        .httpsCallable('setDefaultPayoutProvider')
+        .call({'provider': provider});
+  }
 }

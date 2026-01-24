@@ -17,7 +17,6 @@ class InboxPage extends StatelessWidget {
     final stream = FirebaseFirestore.instance
         .collection('conversations')
         .where('participants', arrayContains: uid)
-        .orderBy('lastMessageAt', descending: true)
         .snapshots();
 
     return Scaffold(
@@ -80,7 +79,7 @@ class InboxPage extends StatelessWidget {
                         ),
                       ),
                     const SizedBox(width: 8),
-                    Chip(label: Text(status)),
+                    _StatusChip(status: status),
                   ],
                 ),
                 onTap: () {
@@ -108,7 +107,7 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = switch (status) {
       'closed' => 'Closed',
-      'dispute_open' => 'Dispute',
+      'disputeOpen' => 'Dispute',
       _ => 'Open',
     };
 

@@ -12,7 +12,11 @@ import 'package:we_source_you/view/media_market/media_market_view/media_market_v
 import 'package:we_source_you/view/profile/profile_view/profile_view.dart';
 import 'package:we_source_you/view/team/team_view/team_view.dart';
 
+import '../view/inbox/inbox_page.dart';
 import '../view/my_library/my_library_view.dart';
+import '../view/pay/payout_settings_bindings.dart';
+import '../view/pay/payout_settings_page.dart';
+import '../widgets/payment_success.dart';
 
 final appPages = <GetPage>[
   GetPage(name: AppRoutes.home, page: () => HomeView()),
@@ -34,4 +38,12 @@ final appPages = <GetPage>[
   GetPage(name: AppRoutes.applyJob, page: () => JobApply()),
   GetPage(name: AppRoutes.team, page: () => TeamView()),
   GetPage(name: AppRoutes.myLibrary, page: () => MyLibraryPage()),
+  GetPage(name: AppRoutes.inbox, page: () => InboxPage()),
+
+  GetPage(name: '/payment-success', page: () => const PaymentSuccessPage()),
+  GetPage(
+    name: AppRoutes.payoutSettings,
+    page: () => const PayoutSettingsPage(),
+    binding: PayoutBinding(),
+  ),
 ];

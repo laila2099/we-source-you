@@ -300,6 +300,10 @@ class HomeView extends StatelessWidget {
           Get.toNamed(AppRoutes.profile);
         } else if (value == 'MyLibrary') {
           Get.toNamed(AppRoutes.myLibrary);
+        } else if (value == 'Inbox') {
+          Get.toNamed(AppRoutes.inbox);
+        } else if (value == 'PayoutSettings') {
+          Get.toNamed(AppRoutes.payoutSettings);
         } else if (value == 'logout') {
           authController.logout();
           Get.offAllNamed(AppRoutes.home);
@@ -308,12 +312,16 @@ class HomeView extends StatelessWidget {
       itemBuilder: (context) => [
         const PopupMenuItem(value: 'Profile', child: Text('Profile')),
         const PopupMenuItem(value: 'MyLibrary', child: Text('My Library')),
+        const PopupMenuItem(value: 'Inbox', child: Text('Inbox')),
+        const PopupMenuItem(
+          value: 'PayoutSettings',
+          child: Text('Payout Settings'),
+        ),
         const PopupMenuItem(value: 'logout', child: Text('Logout')),
       ],
       child: Obx(() {
         // Get username or first letter for avatar
-        final userName =
-            authController.fullName.value; // افترض أنه موجود في authController
+        final userName = authController.fullName.value;
         if (isDesktop) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
