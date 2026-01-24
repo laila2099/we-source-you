@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 admin.initializeApp();
 
+<<<<<<< HEAD
 exports.ping = require('./debug').ping;
 
 exports.createPaymentIntent = require('./payments').createPaymentIntent;
@@ -63,5 +64,8 @@ exports.autoSendPayoutOnQueuedCreated = require('./payouts').autoSendPayoutOnQue
 exports.createSumsubAccessToken = require('./sumsub').createSumsubAccessToken;
 exports.sumsubWebhook = require('./sumsubWebhooks').sumsubWebhook;
 
+=======
+>>>>>>> 8c03dba (.)
 // Admin Manual KYC Function
-exports.adminReviewKyc = require('./admin_kyc').adminReviewKyc;
+exports.onKycStatusChange = require('./admin_kyc').onKycStatusChange;
+exports.setAdminClaim = require('./admin').setAdminClaim;

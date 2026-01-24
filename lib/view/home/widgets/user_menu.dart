@@ -36,9 +36,7 @@ Widget userAvatarMenu({
       const PopupMenuItem(value: 'logout', child: Text('Logout')),
     ],
     child: Obx(() {
-      // Get username or first letter for avatar
-      final userName =
-          authController.fullName.value; // افترض أنه موجود في authController
+      final userName = authController.fullName.value;
       if (isDesktop) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -52,7 +50,6 @@ Widget userAvatarMenu({
           ),
         );
       } else {
-        // Mobile/Tablet avatar
         return CircularIcon(
           gradientColors: [AppColors.lightBlue, AppColors.darkBlue],
           child: Center(

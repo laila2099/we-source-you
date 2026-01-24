@@ -19,9 +19,9 @@ class _TeamViewState extends State<TeamView> {
   @override
   void initState() {
     super.initState();
-    if (!Get.isRegistered<TeamController>()) {
-      Get.put(TeamController());
-    }
+    // if (!Get.isRegistered<TeamController>()) {
+    //   Get.put(TeamController());
+    // }
   }
 
   @override

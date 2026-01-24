@@ -1,43 +1,49 @@
-// // lib/kyc/services/kyc_service.dart
+// import 'dart:html';
+// import 'package:firebase_storage/firebase_storage.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
 
-// class KycService {
-//   final _firestore = FirebaseFirestore.instance;
-//   final _auth = FirebaseAuth.instance;
+// class KYCService {
+//   final FirebaseStorage storage = FirebaseStorage.instance;
+//   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-//   static const blockedCountries = ['SY', 'IR', 'KP'];
-
-//   Future<String> getUserCountry() async {
-//     final uid = _auth.currentUser!.uid;
-//     final doc = await _firestore.collection('users').doc(uid).get();
-//     return (doc.data()?['country'] ?? '').toString().toUpperCase();
-//   }
-
-//   bool isBlockedCountry(String country) {
-//     return blockedCountries.contains(country);
-//   }
-
-//   Future<void> createManualKycRequest(Map<String, String> filesUrls) async {
-//     final uid = _auth.currentUser!.uid;
-
-//     await _firestore.collection('manual_kyc').doc(uid).set({
-//       'uid': uid,
-//       'files': filesUrls,
-//       'status': 'pending',
-//       'createdAt': FieldValue.serverTimestamp(),
-//     });
-
-//     await updateUserKyc(status: 'pending', manual: true);
-//   }
-
-//   Future<void> updateUserKyc({
-//     required String status,
-//     required bool manual,
+//   Future<void> uploadKYC({
+//     required String uid,
+//     required File idFile,
+//     required File selfieFile,
+//     File? otherFile,
 //   }) async {
-//     final uid = _auth.currentUser!.uid;
-//     await _firestore.collection('users').doc(uid).update({
-//       'kyc': {'status': status, 'manual': manual},
-//     });
+//     try {
+//       // رفع الملفات على Firebase Storage
+//       final idRef = storage.ref('kyc/$uid/id.jpg');
+//       final selfieRef = storage.ref('kyc/$uid/selfie.jpg');
+//       final otherRef = otherFile != null
+//           ? storage.ref('kyc/$uid/otherDoc.jpg')
+//           : null;
+
+//       await idRef.putBlob(idFile);
+//       await selfieRef.putBlob(selfieFile);
+//       if (otherFile != null) await otherRef!.putBlob(otherFile);
+
+//       // الحصول على روابط التحميل
+//       final idUrl = await idRef.getDownloadURL();
+//       final selfieUrl = await selfieRef.getDownloadURL();
+//       final otherUrl = otherFile != null
+//           ? await otherRef!.getDownloadURL()
+//           : '';
+
+//       // حفظ الروابط في Firestore
+//       await firestore.collection('kycUploads').doc(uid).set({
+//         'idFileUrl': idUrl,
+//         'selfieUrl': selfieUrl,
+//         'otherDocUrl': otherUrl,
+//       });
+
+//       // تحديث حالة KYC للمستخدم
+//       await firestore.collection('users').doc(uid).update({
+//         'kycStatus': 'pending',
+//       });
+//     } catch (e) {
+//       throw Exception('KYC Upload Failed: $e');
+//     }
 //   }
 // }

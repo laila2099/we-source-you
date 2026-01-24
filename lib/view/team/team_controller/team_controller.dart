@@ -1,5 +1,10 @@
 import 'dart:async';
+<<<<<<< HEAD
 
+=======
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+>>>>>>> 8c03dba (.)
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/model/team_model.dart';
@@ -33,6 +38,7 @@ class TeamController extends GetxController {
     super.onInit();
     fetchFeaturedTeam();
     fetchAllTeam();
+    debugPrint('🔥 TeamController INIT ${hashCode}');
   }
 
   void fetchFeaturedTeam() {
