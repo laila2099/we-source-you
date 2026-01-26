@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:we_source_you/model/category_item.dart';
 import 'package:we_source_you/model/media_item.dart';
 import 'package:we_source_you/routes/app_routes.dart';
+import 'package:we_source_you/view/profile/profile_cotroller/profile_controller.dart';
 
 import '../../../core/payments/payment_context.dart';
 import '../../../core/payments/payment_provider.dart';
@@ -191,6 +192,31 @@ class MediaController extends GetxController {
 
     updateList(discoverMedia);
     updateList(featuredMedia);
+  }
+
+  // داخل MediaController
+  bool canUpload(ProfileController profileCtrl) {
+    // 1. فحص الأسعار (اختياري هنا حسب رغبتك، لكنك طلبته للتوفر)
+    bool ratesIncomplete = profileCtrl.hourlyRate.value <= 0;
+
+    // 2. فحص التوثيق (KYC)
+    bool kycNotApproved =
+        profileCtrl.kycStatus.value.trim().toLowerCase() != 'approved';
+
+    // 3. فحص الدفع (Payout)
+    final paypalData = profileCtrl.payoutProfile['paypal'];
+    final stripeData = profileCtrl.payoutProfile['stripe'];
+    bool paypalReady =
+        paypalData != null &&
+        paypalData['enabled'] == true &&
+        (paypalData['paypalEmail']?.toString().isNotEmpty ?? false);
+    bool stripeReady =
+        stripeData != null &&
+        stripeData['enabled'] == true &&
+        (stripeData['stripeConnectAccountId']?.toString().isNotEmpty ?? false);
+    bool payoutIncomplete = !paypalReady && !stripeReady;
+
+    return !ratesIncomplete && !kycNotApproved && !payoutIncomplete;
   }
 
   ///  ---------------------- Payment ----------------------

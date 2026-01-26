@@ -8,9 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:we_source_you/model/media_item.dart';
+import 'package:we_source_you/routes/app_routes.dart';
 import 'package:we_source_you/view/auth/auth_controller/auth_controller.dart';
 import 'package:we_source_you/view/media_market/media_market_controller/media_market_controller.dart';
 import 'package:we_source_you/view/media_market/widgets/main_content.dart';
+import 'package:we_source_you/view/profile/profile_cotroller/profile_controller.dart';
 
 class MediaView extends GetView<MediaController> {
   MediaView({super.key});
@@ -23,7 +25,28 @@ class MediaView extends GetView<MediaController> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showUploadDialog(controller, authController),
+        onPressed: () {
+          // نحتاج الوصول لبيانات البروفايل للفحص
+          final profileCtrl = Get.isRegistered<ProfileController>()
+              ? Get.find<ProfileController>()
+              : Get.put(ProfileController());
+          if (controller.canUpload(profileCtrl)) {
+            _showUploadDialog(controller, authController);
+          } else {
+            Get.defaultDialog(
+              title: "Action Required",
+              middleText:
+                  "To upload media, you must have an approved KYC, set your rates, and configure a payout method.",
+              textConfirm: "Go to Profile",
+              confirmTextColor: Colors.white,
+              onConfirm: () {
+                Get.back(); // إغلاق الديالوج
+                Get.toNamed(AppRoutes.profile); // الانتقال للبروفايل
+              },
+              textCancel: "Cancel",
+            );
+          }
+        },
         backgroundColor: Colors.pinkAccent,
         child: const Icon(Icons.upload, color: Colors.white),
       ),

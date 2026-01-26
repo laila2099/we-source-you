@@ -61,6 +61,12 @@ async function getPayPalAccessToken() {
   return json.access_token;
 }
 
+function toSenderItemId(payoutId) {
+  // PayPal max 63 chars
+  // خليها قصيرة: "p_" + payoutId (قص)
+  return `p_${payoutId}`.slice(0, 63);
+}
+
 async function paypalCreatePayout({ receiverEmail, amount, currency, note, senderItemId }) {
   const base = PAYPAL_BASE_URL_SECRET.value();
   const token = await getPayPalAccessToken();
@@ -76,7 +82,7 @@ async function paypalCreatePayout({ receiverEmail, amount, currency, note, sende
         amount: { value: String(amount.toFixed(2)), currency },
         receiver: receiverEmail,
         note: note || 'Payout from platform',
-        sender_item_id: senderItemId || `item_${Date.now()}`,
+        sender_item_id: toSenderItemId(senderItemId) || `item_${Date.now()}`,
       },
     ],
   };
@@ -336,7 +342,7 @@ exports.sendPayout = onCall(
 
       await payoutRef.set(
         {
-          status: 'queued',
+          status: 'failed',
           lastError: String(e?.message || e),
           lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -450,6 +456,93 @@ exports.autoSendPayoutOnQueuedCreated = onDocumentCreated(
     } catch (e) {
       console.error('autoSendPayoutOnQueuedCreated failed', e);
     }
+  },
+);
+
+function isRetryablePayPalError(lastError) {
+  const s = (lastError || '').toString();
+
+  // ✅ أخطاء مؤقتة (ممكن تزبط مع إعادة المحاولة)
+  if (s.includes('"name":"INTERNAL_SERVER_ERROR"')) return true;
+  if (s.includes('"name":"SERVICE_UNAVAILABLE"')) return true;
+  if (s.includes('"name":"RATE_LIMIT_REACHED"')) return true;
+  if (s.includes('ECONNRESET') || s.includes('ETIMEDOUT') || s.includes('socket')) return true;
+  if (s.includes('500') || s.includes('502') || s.includes('503') || s.includes('504')) return true;
+
+  // ❌ أخطاء دائمة (لا تعيدي عليها)
+  if (s.includes('invalid_client')) return false; // 401 credentials
+  if (s.includes('"name":"VALIDATION_ERROR"')) return false; // 400 bad request
+
+  // افتراضيًا: اعتبريه غير قابل للإعادة (أكثر أمانًا)
+  return false;
+}
+
+function computeNextRetryMs(retryCount) {
+  // backoff: 1m, 5m, 15m, 60m (تقريبًا)
+  const table = [60_000, 5 * 60_000, 15 * 60_000, 60 * 60_000];
+  return table[Math.min(retryCount, table.length - 1)];
+}
+
+exports.autoRetryPayoutOnFailedUpdated = onDocumentUpdated(
+  {
+    document: 'payouts/{payoutId}',
+    region: 'us-central1',
+    secrets: [PAYPAL_BASE_URL_SECRET, PAYPAL_CLIENT_ID_SECRET, PAYPAL_CLIENT_SECRET_SECRET],
+  },
+  async (event) => {
+    const payoutId = event.params.payoutId;
+    const before = event.data?.before?.data() || null;
+    const after = event.data?.after?.data() || null;
+    if (!after) return;
+
+    // شغّليها فقط ضمن سياقك
+    if (after.context !== 'mediaMarket') return;
+    if (!after.payoutProvider || !after.destination) return;
+
+    // 🔥 فقط عند الانتقال إلى failed (مش أي update)
+    if (before?.status === 'failed') return;
+    if (after.status !== 'failed') return;
+
+    // Retry guards
+    const retryCount = Number(after.retryCount || 0);
+    const maxRetries = Number(after.maxRetries || 4);
+    const lastError = String(after.lastError || '');
+
+    if (lastError.includes('invalid_client')) return;
+    if (lastError.includes('VALIDATION_ERROR')) return;
+
+    if (retryCount >= maxRetries) {
+      console.log('Max retries reached, keeping failed', payoutId, { retryCount, maxRetries });
+      return;
+    }
+
+    // nextRetryAt gate (إذا ما بدك، فيكي تشيليه ويصير retry مباشرة)
+    const now = Date.now();
+    const nextRetryAt = after.nextRetryAt?.toMillis?.() ?? 0;
+
+    // 1) جهزي doc للمحاولة الجديدة (queued + nextRetryAt جديد)
+    // IMPORTANT: نعمل update قبل الإرسال لتجنب تكرارات لو صار trigger مرتين
+    const delayMs = computeNextRetryMs(retryCount);
+    const newNextRetryAt = admin.firestore.Timestamp.fromMillis(now + delayMs);
+
+    await event.data.after.ref.set(
+      {
+        status: 'queued',
+        retryCount: retryCount + 1,
+        nextRetryAt: admin.firestore.Timestamp.fromMillis(Date.now() + delayMs),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    // 2) ابعتي payout (التريغر الآخر تبع queued updated رح يلتقطه)
+    // إذا ما عندك queued-updated trigger، نادِ sendPayoutInternal هون مباشرة:
+    await sendPayoutInternal(payoutId);
+
+    console.log('Retry scheduled by switching to queued', payoutId, {
+      retryCount: retryCount + 1,
+      nextRetryAt: newNextRetryAt.toDate().toISOString(),
+    });
   },
 );
 
@@ -568,9 +661,13 @@ async function sendPayoutInternal(payoutId) {
 
     await payoutRef.set(
       {
-        status: 'queued',
+        status: 'failed',
         lastError: String(e?.message || e),
         lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
+        retryCount: admin.firestore.FieldValue.increment(1),
+        maxRetries: 4,
+        nextRetryAt: admin.firestore.Timestamp.fromMillis(Date.now() + 60_000),
+
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
       { merge: true },

@@ -12,13 +12,14 @@ class TeamModel {
   final String id;
   final String initials;
   final Color initialsColor;
-  final String name;
+  final String name; // سنخزن فيه fullName
   final String title;
   final String country;
   final String location;
   final double rating;
   final int reviews;
   final List<String> specialties;
+  final String? analystSpecialty; // نأخذ أول عنصر من المصفوفة للعرض
   final String projects;
   final String clients;
   final String years;
@@ -29,6 +30,7 @@ class TeamModel {
   final bool available;
 
   TeamModel({
+    required this.id,
     required this.initials,
     required this.initialsColor,
     required this.name,
@@ -38,6 +40,7 @@ class TeamModel {
     required this.rating,
     required this.reviews,
     required this.specialties,
+    this.analystSpecialty,
     required this.projects,
     required this.clients,
     required this.years,
@@ -46,50 +49,61 @@ class TeamModel {
     required this.projectRate,
     required this.isCompany,
     required this.available,
-    required this.id,
   });
 
   factory TeamModel.fromMap({
     required String id,
     required Map<String, dynamic> map,
   }) {
-    double asDouble(dynamic value) {
-      if (value == null) return 0.0;
-      if (value is double) return value;
-      if (value is int) return value.toDouble();
-      if (value is String) return double.tryParse(value) ?? 0.0;
-      return 0.0;
+    // دالة لتحويل أي نوع بيانات إلى Double بأمان
+    double asDouble(dynamic v) {
+      if (v == null) return 0.0;
+      if (v is num) return v.toDouble();
+      return double.tryParse(v.toString()) ?? 0.0;
     }
 
-    // دالة مساعدة لتحويل القيمة إلى int بأمان
-    int asInt(dynamic value) {
-      if (value == null) return 0;
-      if (value is int) return value;
-      if (value is double) return value.toInt();
-      if (value is String) return int.tryParse(value) ?? 0;
-      return 0;
+    // 1. معالجة الاسم: جلب fullName (لليوزر) أو name (للتيم)
+    String name = map['fullName'] ?? map['name'] ?? 'No Name';
+
+    // 2. معالجة التخصصات (specialties أو mediaWorkTypes)
+    List<String> specs = [];
+    if (map['mediaWorkTypes'] is List) {
+      specs = List<String>.from(map['mediaWorkTypes']);
+    } else if (map['specialties'] is List) {
+      specs = List<String>.from(map['specialties']);
     }
 
-    String type = (map['type'] ?? 'journalist').toLowerCase();
+    // 3. ✅ معالجة analystSpecialty كـ Array أو String
+    String? displayAnalyst;
+    if (map['analystSpecialty'] is List &&
+        (map['analystSpecialty'] as List).isNotEmpty) {
+      displayAnalyst = map['analystSpecialty'][0].toString(); // نأخذ أول عنصر
+    } else if (map['analystSpecialty'] is String &&
+        map['analystSpecialty'].isNotEmpty) {
+      displayAnalyst = map['analystSpecialty'];
+    }
+
+    // دمج التخصص الفرعي في القائمة العامة للـ Tags إذا لم يكن موجوداً
+    if (displayAnalyst != null && !specs.contains(displayAnalyst)) {
+      specs.add(displayAnalyst);
+    }
+
+    String type = (map['type'] ?? 'individual').toLowerCase();
 
     return TeamModel(
       id: id,
-      initials: map['name'] != null && map['name'].isNotEmpty
-          ? map['name']
-                .toString()
-                .split(' ')
-                .map((e) => e[0])
-                .join()
-                .toUpperCase()
+      name: name,
+      initials: name.trim().isNotEmpty
+          ? name.trim().split(' ').take(2).map((e) => e[0]).join().toUpperCase()
           : '?',
-      initialsColor: typeColors[type] ?? Colors.grey,
-      name: map['name'] ?? 'Unknown',
-      title: map['title'] ?? '',
+      initialsColor: type == 'company' ? Colors.orange : Colors.blue,
+      title: map['title'] ?? (specs.isNotEmpty ? specs.first : 'Freelancer'),
       country: map['country'] ?? '',
-      location: map['location'] ?? 'Not specified',
-      rating: asDouble(map['rating']),
-      reviews: asInt(map['reviews']),
-      specialties: List<String>.from(map['specialties'] ?? []),
+      location: map['location'] ?? map['country'] ?? 'Global',
+      rating: asDouble(map['rating'] ?? 5.0),
+      reviews: int.tryParse(map['reviews']?.toString() ?? '0') ?? 0,
+      specialties: specs,
+      analystSpecialty: displayAnalyst, // الحقل الجديد
       projects: map['projects']?.toString() ?? '0',
       clients: map['clients']?.toString() ?? '0',
       years: map['years']?.toString() ?? '0',

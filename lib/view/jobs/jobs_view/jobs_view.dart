@@ -17,6 +17,17 @@ class JobView extends StatefulWidget {
 
 class _JobViewState extends State<JobView> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ScrollController _sidebarController = ScrollController();
+  final ScrollController _dialogController = ScrollController();
+  final TextEditingController _descriptionController = TextEditingController();
+  @override
+  void dispose() {
+    // 2. تنظيف الـ Controllers عند إغلاق الصفحة
+    _sidebarController.dispose();
+    _dialogController.dispose();
+    _descriptionController.dispose(); // تنظيف الذاكرة
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -37,8 +48,7 @@ class _JobViewState extends State<JobView> {
       appBar: AppBar(
         leading: IconButton(onPressed: Get.back, icon: Icon(Icons.arrow_back)),
         title: const Text("Job Board"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 1,
         actions: [
           Padding(
@@ -68,7 +78,10 @@ class _JobViewState extends State<JobView> {
                   insetPadding: const EdgeInsets.all(24),
                   child: SizedBox(
                     width: 320,
-                    child: SingleChildScrollView(child: JobFilterSidebar()),
+                    child: SingleChildScrollView(
+                      controller: _dialogController,
+                      child: JobFilterSidebar(),
+                    ),
                   ),
                 ),
               );
@@ -84,9 +97,12 @@ class _JobViewState extends State<JobView> {
               children: [
                 // Desktop sidebar always visible
                 if (isDesktop)
-                  const SizedBox(
+                  SizedBox(
                     width: 320,
-                    child: SingleChildScrollView(child: JobFilterSidebar()),
+                    child: SingleChildScrollView(
+                      controller: _sidebarController,
+                      child: JobFilterSidebar(),
+                    ),
                   ),
 
                 if (isDesktop)

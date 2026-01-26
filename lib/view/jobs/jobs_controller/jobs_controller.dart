@@ -74,18 +74,23 @@ class JobsController extends GetxController {
   // 🔍 Search text from search bar
   void updateSearchQuery(String query) {
     _searchQuery = query;
-    _fetchFilteredFromRemote();
+    _recomputeVisible();
   }
 
   // 🔥 Production-ready filters (client-side for now)
   void applyAdvancedFilters({
     String? jobType,
+    String? description,
     int? minSalary,
     int? maxSalary,
     List<String>? countries,
     List<String>? mediaTypes,
     String? location,
   }) {
+    // إذا جاء نص من الوصف، نحدث الـ _searchQuery الأساسي
+    if (description != null && description.isNotEmpty) {
+      _searchQuery = description;
+    }
     _jobType = jobType ?? _jobType;
     _minSalary = minSalary;
     _maxSalary = maxSalary;
@@ -140,9 +145,15 @@ class JobsController extends GetxController {
     final locationLower = _location.toLowerCase();
 
     final results = jobsForSearch.where((job) {
-      if (searchLower.isNotEmpty &&
-          !job.title.toLowerCase().contains(searchLower)) {
-        return false;
+      if (searchLower.isNotEmpty) {
+        final titleMatch = (job.title ?? "").toLowerCase().contains(
+          searchLower,
+        );
+        final detailsMatch = (job.details ?? "").toLowerCase().contains(
+          searchLower,
+        );
+
+        if (!titleMatch && !detailsMatch) return false;
       }
 
       // Job type match (case-insensitive, ignore spaces/dashes)

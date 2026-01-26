@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/core/constant/app_color.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
@@ -106,21 +107,41 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            IconButton(
-              icon: const Icon(Icons.notifications),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => NotificationsPage()),
-                );
-              },
-            ),
-            // TextButton(
-            //   onPressed: () {
-            //     Get.toNamed(AppRoutes.kyc);
-            //   },
-            //   child: Text("Navigate"),
-            // ),
+            if (controller.isProfileIncomplete)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100, // لون هادئ للفت الانتباه
+                  border: Border(
+                    left: BorderSide(color: Colors.amber.shade900, width: 4),
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.amber.shade900,
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        "Please complete your profile verification to go live (Rates, KYC, and Payout).",
+                        style: TextStyle(
+                          color: Color(0xFF7F5F01),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             if (authController.role.value == 'admin')
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -209,6 +230,8 @@ class ProfileScreen extends StatelessWidget {
                 controller.countryCtrl,
                 controller.isEditing,
               ),
+              const SizedBox(height: 10),
+
               _buildRatesSection(),
               const SizedBox(height: 20),
               _buildMediaWorkTypesSection(),
@@ -241,6 +264,124 @@ class ProfileScreen extends StatelessWidget {
               _buildRatesSection(),
             ],
 
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.color,
+                  ),
+                  onPressed: () {
+                    Get.toNamed(AppRoutes.payoutSettings);
+                  },
+                  child: Text(
+                    "Payout Settings",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                SizedBox(width: 5),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward_ios),
+                  iconSize: 12,
+                  onPressed: () {
+                    Get.toNamed(AppRoutes.payoutSettings);
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+            // ---------------- KYC Status ----------------
+            Obx(() {
+              final status = controller.kycStatus.value.trim().toLowerCase();
+
+              return Wrap(
+                // استخدمنا Wrap بدلاً من Row لضمان عدم حدوث Overflow في الشاشات الصغيرة
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  const Text(
+                    "KYC Status",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 12),
+
+                  if (status == 'rejected') ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        "REJECTED ❌",
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                      ),
+                      onPressed: () => Get.toNamed(AppRoutes.kyc),
+                      child: const Text("Re-submit KYC"),
+                    ),
+                  ] else if (status.isEmpty)
+                    ElevatedButton(
+                      onPressed: () => Get.toNamed(AppRoutes.kyc),
+                      child: const Text("Start KYC Verification"),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: status == 'approved'
+                            ? Colors.green.shade100
+                            : Colors.blue.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        status.toUpperCase(),
+                        style: TextStyle(
+                          color: status == 'approved'
+                              ? Colors.green.shade800
+                              : Colors.blue.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            }),
+            const SizedBox(height: 16),
+
+            Obx(() {
+              return Row(
+                children: [
+                  const Text("Available: "),
+                  Switch(
+                    value: controller.available.value,
+                    onChanged: controller.canBeAvailable
+                        ? (val) => controller.toggleAvailability(val)
+                        : null, // disabled if rates are missing
+                  ),
+                ],
+              );
+            }),
             const SizedBox(height: 24),
 
             // ---------------- Posted Jobs ----------------
@@ -285,107 +426,6 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 24),
             const Divider(),
 
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Get.toNamed(AppRoutes.payoutSettings);
-                  },
-                  child: Text("Payout Settings"),
-                ),
-                SizedBox(width: 16),
-                Icon(Icons.arrow_forward_ios),
-              ],
-            ),
-            Obx(() {
-              return Row(
-                children: [
-                  const Text("Available: "),
-                  Switch(
-                    value: controller.available.value,
-                    onChanged: controller.canBeAvailable
-                        ? (val) => controller.toggleAvailability(val)
-                        : null, // disabled if rates are missing
-                  ),
-                ],
-              );
-            }),
-
-            const SizedBox(height: 16),
-            // ---------------- KYC Status ----------------
-            Obx(() {
-              // تنظيف النص لضمان دقة المقارنة
-              final status = controller.kycStatus.value.trim().toLowerCase();
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    "KYC Status",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // 1. حالة الرفض: عرض نص REJECTED وتحته زر المحاولة مرة أخرى
-                  if (status == 'rejected') ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        "REJECTED ❌",
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                      ),
-                      onPressed: () => Get.toNamed(AppRoutes.kyc),
-                      child: const Text("Re-submit KYC Verification"),
-                    ),
-                  ]
-                  // 2. حالة لم يبدأ بعد (فارغ): عرض زر البدء فقط
-                  else if (status.isEmpty)
-                    ElevatedButton(
-                      onPressed: () => Get.toNamed(AppRoutes.kyc),
-                      child: const Text("Start KYC Verification"),
-                    )
-                  // 3. حالة الانتظار أو القبول: عرض الحالة فقط بدون أزرار
-                  else
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: status == 'approved'
-                            ? Colors.green.shade100
-                            : Colors.blue.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        status.toUpperCase(),
-                        style: TextStyle(
-                          color: status == 'approved'
-                              ? Colors.green.shade800
-                              : Colors.blue.shade800,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            }),
             // ---------------- User Proposals ----------------
             const Text(
               "My Proposals",
@@ -565,8 +605,7 @@ class ProfileScreen extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Rates", style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+          const Text("Rates :", style: TextStyle(fontWeight: FontWeight.bold)),
           _profileField(
             "Hourly Rate",
             TextEditingController()
@@ -626,6 +665,7 @@ class ProfileScreen extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ... جزء الصورة يبقى كما هو ...
                     if (jobImageUrl != null && jobImageUrl.isNotEmpty)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
@@ -637,32 +677,39 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       )
                     else
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.work,
-                          size: 30,
-                          color: Colors.grey,
-                        ),
-                      ),
+                      _buildPlaceholderIcon(),
+
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            jobTitle,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  jobTitle,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              // عرض السعر هنا بخط بارز ولون مميز
+                              Text(
+                                "\$${proposal.bidAmount}", // تأكد أن حقل السعر اسمه price في الموديل
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Color(
+                                    0xFFE8744F,
+                                  ), // نفس لون زر التقديم
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 8),
                           Text(
                             proposal.proposalText,
                             maxLines: 3,
@@ -678,6 +725,7 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
+                // السطر السفلي (الحالة والتاريخ)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -687,22 +735,16 @@ class ProfileScreen extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: proposal.status == 'approved'
-                            ? Colors.green.shade100
-                            : proposal.status == 'rejected'
-                            ? Colors.red.shade100
-                            : Colors.orange.shade100,
+                        color: _getStatusColor(
+                          proposal.status,
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         proposal.status.toUpperCase(),
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: proposal.status == 'approved'
-                              ? Colors.green.shade800
-                              : proposal.status == 'rejected'
-                              ? Colors.red.shade800
-                              : Colors.orange.shade800,
+                          color: _getStatusColor(proposal.status),
                           fontSize: 12,
                         ),
                       ),
@@ -719,6 +761,18 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // دالة مساعدة للألوان لجعل الكود أنظف
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return Colors.green.shade800;
+      case 'rejected':
+        return Colors.red.shade800;
+      default:
+        return Colors.orange.shade800;
+    }
   }
 
   Widget _buildMediaWorkTypesSection() {
@@ -800,9 +854,9 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: controller.analystSpecialty.value.isEmpty
+                value: controller.analystSpecialty.isEmpty
                     ? null
-                    : controller.analystSpecialty.value,
+                    : controller.analystSpecialty.first,
                 items: const [
                   DropdownMenuItem(
                     value: "Arabic Affairs",
@@ -817,8 +871,13 @@ class ProfileScreen extends StatelessWidget {
                     child: Text("فارسي"),
                   ),
                 ],
-                onChanged: (value) =>
-                    controller.analystSpecialty.value = value ?? '',
+                onChanged: (value) {
+                  if (value != null) {
+                    controller.analystSpecialty.value = [
+                      value,
+                    ]; // تعيين القيمة كعنصر وحيد في مصفوفة
+                  }
+                },
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: "Select specialty",
@@ -835,16 +894,16 @@ class ProfileScreen extends StatelessWidget {
                 children: allJobs.map((type) {
                   String label = type;
                   if (type == "Analyst" &&
-                      controller.analystSpecialty.value.isNotEmpty) {
-                    label += " (${controller.analystSpecialty.value})";
+                      controller.analystSpecialty.isNotEmpty) {
+                    label += " (${controller.analystSpecialty.join(', ')})";
                   }
                   return Chip(
                     label: Text(label),
                     onDeleted: () {
                       if (type == controller.individualJob.value) {
                         controller.individualJob.value = '';
-                        controller.analystSpecialty.value = '';
-                      } else {
+                        controller.analystSpecialty
+                            .clear(); // مسح المصفوفة                      } else {
                         controller.removeMediaWorkType(type);
                       }
                     },
@@ -876,6 +935,18 @@ class ProfileScreen extends StatelessWidget {
         ],
       );
     });
+  }
+
+  Widget _buildPlaceholderIcon() {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Icon(Icons.work, size: 30, color: Colors.grey),
+    );
   }
 
   Widget _profileField(

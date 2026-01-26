@@ -65,7 +65,7 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
   // Selections
   final Map<String, bool> _selectedSpecialties = {};
   String _selectedType = 'Any';
-
+  String? _selectedAnalystSpecialty;
   // Controller
   late final TeamController controller;
 
@@ -77,29 +77,29 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
 
   // --- MOCK DATA (Replace with Firestore StreamBuilder if fetching options dynamically) ---
   final List<String> _specialties = [
+    'Producer',
+    'Reporter',
+    'TV Cameraman',
+    'Photographer',
+    'Editor',
+    'Trainer',
+    'Graphic Designer',
+    'Media Lawyer',
+    'Voice Over',
+    'Translator',
+    'Analyst',
+    'Web Designer',
     'Social Media Management',
     'Video Editing',
     'Audio Production',
     'Conflict Reporting',
     'Live Broadcasting',
     'Interviewing',
-    'Research',
-    'Photography',
-    'Graphic Design',
-    'Legal Consulting',
-    'Web Designer',
   ];
 
   String? _selectedCountry;
 
-  final List<String> _types = [
-    'Any',
-    'Company',
-    'Journalist',
-    'Photographer',
-    'Lawyer',
-    'Designer',
-  ];
+  final List<String> _types = ['Any', 'Company'];
 
   @override
   Widget build(BuildContext context) {
@@ -160,6 +160,7 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
 
               // Specialties Filter
               _buildSectionTitle('Specialties'),
+
               _buildScrollableCheckboxList(_specialties, _selectedSpecialties),
               const SizedBox(height: 20),
 

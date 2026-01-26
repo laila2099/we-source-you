@@ -9,7 +9,7 @@ class ProposalModel {
   String status; // 'pending', 'approved', 'rejected'
   DateTime createdAt;
   DateTime? updatedAt;
-  String? amount;
+  String? bidAmount;
 
   ProposalModel({
     required this.id,
@@ -20,7 +20,7 @@ class ProposalModel {
     this.status = 'pending',
     required this.createdAt,
     this.updatedAt,
-    this.amount,
+    this.bidAmount,
   });
 
   Map<String, dynamic> toMap() {
@@ -30,6 +30,7 @@ class ProposalModel {
       'jobOwnerId': jobOwnerId,
       'proposalText': proposalText,
       'status': status,
+      'bidAmount': bidAmount,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
     };
@@ -52,6 +53,7 @@ class ProposalModel {
       status: data['status'] ?? 'pending',
       createdAt: parseDate(data['createdAt']),
       updatedAt: parseDate(data['updatedAt']),
+      bidAmount: data['bidAmount']?.toString(),
     );
   }
 }

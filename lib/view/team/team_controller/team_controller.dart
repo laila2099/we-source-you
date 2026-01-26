@@ -68,7 +68,7 @@ class TeamController extends GetxController {
               print(doc.id);
               return TeamModel.fromMap(id: doc.id, map: doc.data());
             }).toList();
-            // Initialize visible list
+            allTeam.sort((a, b) => b.id.compareTo(a.id));
             _recomputeVisible();
           },
           onError: (e) {

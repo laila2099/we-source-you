@@ -140,6 +140,34 @@ class TeamCard extends GetView<TeamController> {
                   children: [
                     Text(journalist.name, style: nameStyle),
                     Text(journalist.title, style: titleStyle),
+                    // داخل TeamCard Column
+                    // داخل Column في TeamCard
+                    if (journalist.analystSpecialty != null &&
+                        journalist.analystSpecialty!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, bottom: 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.lightBlue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: AppColors.lightBlue.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Text(
+                            journalist.analystSpecialty!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.lightBlue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
                     Row(
                       children: [
                         const Icon(

@@ -1,3 +1,4 @@
+import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/model/job_card_model.dart';
@@ -48,9 +49,9 @@ class _JobFilterSidebarState extends State<JobFilterSidebar> {
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _minSalaryController = TextEditingController();
   final TextEditingController _maxSalaryController = TextEditingController();
-
+  final TextEditingController _descriptionController = TextEditingController();
   // Selections
-  final Map<String, bool> _selectedCountries = {};
+  String? _selectedCountryName;
   final Map<String, bool> _selectedMediaTypes = {};
   final Map<String, bool> _selectedLanguages = {};
   final Map<String, bool> _selectedSkills = {};
@@ -83,26 +84,26 @@ class _JobFilterSidebarState extends State<JobFilterSidebar> {
   }
 
   // --- MOCK DATA (Replace with Firestore StreamBuilder if fetching options dynamically) ---
-  final List<String> _countries = [
-    'Belgium',
-    'China',
-    'USA',
-    'Germany',
-    'Remote',
-  ];
+
   final List<String> _mediaTypes = [
-    'Analyst',
-    'Graphic Designer',
-    'Lawyer',
+    'Producer',
+    'Reporter',
+    'TV Cameraman',
+    'Photographer',
     'Editor',
-    'Journalist',
-  ];
-  final List<String> _languages = [
-    'Arabic',
-    'Chinese',
-    'Dutch',
-    'English',
-    'French',
+    'Trainer',
+    'Graphic Designer',
+    'Media Lawyer',
+    'Voice Over',
+    'Translator',
+    'Analyst',
+    'Web Designer',
+    'Social Media Management',
+    'Video Editing',
+    'Audio Production',
+    'Conflict Reporting',
+    'Live Broadcasting',
+    'Interviewing',
   ];
   final List<String> _skills = [
     'Audio Production',
@@ -111,13 +112,7 @@ class _JobFilterSidebarState extends State<JobFilterSidebar> {
     'First Aid',
     'Video Editing',
   ];
-  final List<String> _jobTypes = [
-    'Any',
-    'Full-Time',
-    'Part-Time',
-    'Contract',
-    'Freelance',
-  ];
+  final List<String> _jobTypes = ['Any', 'Full-Time', 'Part-Time', 'Freelance'];
 
   @override
   Widget build(BuildContext context) {
@@ -142,26 +137,37 @@ class _JobFilterSidebarState extends State<JobFilterSidebar> {
               const SizedBox(height: 16),
 
               // Tabs
-              Row(
-                children: [
-                  _buildTab('Jobs'),
-                  const SizedBox(width: 8),
-                  _buildTab('Online Users'),
-                ],
-              ),
               const SizedBox(height: 20),
 
-              // Search Field
-              // _buildSectionTitle('Search for jobs'),
-              // TextField(
-              //   controller: _searchController,
-              //   decoration: const InputDecoration(hintText: 'Search jobs...'),
-              // ),
-              // const SizedBox(height: 20),
-
-              // Countries Filter
               _buildSectionTitle('Countries'),
-              _buildScrollableCheckboxList(_countries, _selectedCountries),
+              InkWell(
+                onTap: () {
+                  showCountryPicker(
+                    context: context,
+                    showPhoneCode: false,
+                    onSelect: (country) {
+                      setState(() {
+                        _selectedCountryName = country.name;
+                      });
+                    },
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    _selectedCountryName ?? 'Select country',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 20),
 
               // Specific Location
@@ -178,8 +184,6 @@ class _JobFilterSidebarState extends State<JobFilterSidebar> {
               const SizedBox(height: 20),
 
               // Languages
-              _buildSectionTitle('Languages'),
-              _buildScrollableCheckboxList(_languages, _selectedLanguages),
               const SizedBox(height: 20),
 
               // Job Type Dropdown
@@ -375,7 +379,7 @@ class _JobFilterSidebarState extends State<JobFilterSidebar> {
       _locationController.clear();
       _minSalaryController.clear();
       _maxSalaryController.clear();
-      _selectedCountries.clear();
+      _selectedCountryName = null;
       _selectedMediaTypes.clear();
       _selectedLanguages.clear();
       _selectedSkills.clear();
@@ -384,10 +388,11 @@ class _JobFilterSidebarState extends State<JobFilterSidebar> {
   }
 
   Future<void> _performSearch() async {
-    final selectedCountryList = _selectedCountries.entries
-        .where((e) => e.value)
-        .map((e) => e.key)
-        .toList();
+    // تجهيز قائمة الدولة المختارة
+    final List<String> selectedCountryList = [];
+    if (_selectedCountryName != null) {
+      selectedCountryList.add(_selectedCountryName!);
+    }
 
     final selectedMediaList = _selectedMediaTypes.entries
         .where((e) => e.value)
@@ -396,16 +401,19 @@ class _JobFilterSidebarState extends State<JobFilterSidebar> {
 
     controller.applyAdvancedFilters(
       jobType: _selectedJobType,
+      description: _descriptionController.text
+          .trim(), // 👈 إرسال النص للكنترولر
       minSalary: int.tryParse(_minSalaryController.text),
       maxSalary: int.tryParse(_maxSalaryController.text),
-      countries: selectedCountryList,
+      countries: selectedCountryList, // إرسال القائمة الجديدة
       mediaTypes: selectedMediaList,
       location: _locationController.text,
     );
 
-    // Close dialog if this sidebar was opened as a dialog (mobile filter)
     if (Get.isDialogOpen ?? false) {
       Get.back();
     }
   }
+
+  // Close dialog if this sidebar was opened as a dialog (mobile filter)
 }

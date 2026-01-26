@@ -22,12 +22,13 @@ class _JobApplyState extends State<JobApply> {
   final _proposalController = TextEditingController();
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
-
+  final _priceController = TextEditingController();
   bool _isSubmitting = false;
 
   @override
   void dispose() {
     _proposalController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -164,6 +165,18 @@ class _JobApplyState extends State<JobApply> {
         ),
         const SizedBox(height: 12),
         TextField(
+          controller: _priceController,
+          keyboardType: TextInputType.number, // لإظهار لوحة أرقام فقط
+          decoration: InputDecoration(
+            hintText: "Enter your offer price (e.g. 500\$)",
+            prefixIcon: const Icon(Icons.attach_money),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
           controller: _proposalController,
           maxLines: 8,
           decoration: InputDecoration(
@@ -198,10 +211,24 @@ class _JobApplyState extends State<JobApply> {
   }
 
   Future<void> submitProposal(JobPostModel job, User user) async {
-    if (_proposalController.text.trim().isEmpty) {
+    final proposalText = _proposalController.text.trim();
+    final priceText = _priceController.text.trim();
+
+    // التحقق من أن السعر والوصف ليسا فارغين
+    if (priceText.isEmpty) {
       Get.snackbar(
         "Error",
-        "Proposal is required",
+        "Please enter your price offer",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    if (proposalText.isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Proposal description is required",
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -216,17 +243,18 @@ class _JobApplyState extends State<JobApply> {
 
       final docRef = FirebaseFirestore.instance.collection('proposals').doc();
 
-      final proposal = ProposalModel(
-        id: docRef.id,
-        jobId: job.id!,
-        userId: user.uid,
-        jobOwnerId: ownerId,
-        proposalText: _proposalController.text.trim(),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      final proposalData = {
+        'id': docRef.id,
+        'jobId': job.id,
+        'userId': user.uid,
+        'jobOwnerId': job.userId,
+        'proposalText': proposalText,
+        'bidAmount': priceText, // إضافة السعر هنا
+        'createdAt': DateTime.now(),
+        'updatedAt': DateTime.now(),
+      };
 
-      await docRef.set(proposal.toMap());
+      await docRef.set(proposalData);
 
       if (ownerId != null) {
         await _firestore

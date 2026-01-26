@@ -61,15 +61,12 @@ Widget buildRequirements(JobPostModel job, BuildContext context) {
 
   addInfo("Experience Level", job.experienceLevel);
   addInfo("Job Type", job.jobType);
-  addInfo("Positions", job.numPositions.toString());
   addInfo("Currency", job.currency);
-  addInfo("Salary Period", job.period);
   addInfo("Project Details", job.projectDetails);
   addInfo("Additional Info", job.additionalInfo);
   addInfo("Contact Name", job.contactName);
   addInfo("Contact Email", job.contactEmail);
   addInfo("Contact Phone", job.contactPhone);
-  addInfo("Contact Method", job.contactMethod);
 
   if (job.startDate != null) {
     addInfo("Start Date", formatDate(job.startDate));
@@ -77,9 +74,6 @@ Widget buildRequirements(JobPostModel job, BuildContext context) {
   if (job.endDate != null) {
     addInfo("End Date", formatDate(job.endDate));
   }
-  // if (job.deadline != null) {
-  //   addInfo("Deadline", _formatDate(job.deadline));
-  // }
 
   addBool("Portfolio Required", job.portfolioRequired);
   addBool("Can Travel", job.canTravel);

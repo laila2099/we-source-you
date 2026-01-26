@@ -14,8 +14,8 @@ class ProfileController extends GetxController {
   var isEditing = false.obs;
   var isLoading = false.obs;
   var individualJob = ''.obs; // الوظيفة الحالية
-  var analystSpecialty = ''.obs; // تخصص Analyst لو تم اختياره
-
+  // بدلاً من var analystSpecialty = ''.obs;
+  var analystSpecialty = <String>[].obs;
   // Account type
   var accountType = "individual".obs;
 
@@ -65,71 +65,6 @@ class ProfileController extends GetxController {
 
   void goBack() => Get.back();
 
-  // Future<void> getProfile() async {
-  //   try {
-  //     isLoading.value = true;
-
-  //     final doc = await firestore.collection('users').doc(uid).get();
-  //     if (!doc.exists) return;
-
-  //     final data = doc.data() as Map<String, dynamic>;
-  //     kycStatus.value = data['kycStatus'] ?? ''; // empty if not started
-
-  //     accountType.value = data['accountType'] ?? data['type'] ?? 'individual';
-  //     available.value = data['available'] ?? false;
-  //     if (accountType.value == "individual") {
-  //       fullNameCtrl.text = data["fullName"] ?? "";
-  //       emailCtrl.text = data["email"] ?? "";
-  //       phoneCtrl.text = data["phone"] ?? "";
-  //       countryCtrl.text = data["country"] ?? "";
-  //       analystSpecialty.value = data["analystSpecialty"] ?? '';
-  //       socialLinksCtrl.text = data["socialLinks"] ?? "";
-
-  //       // نجيب كل الوظائف من الـ array
-  //       List<String> types = [];
-  //       if (data["mediaWorkTypes"] != null) {
-  //         types = List<String>.from(data["mediaWorkTypes"]);
-  //       }
-
-  //       mediaWorkTypes.value = types;
-
-  //       // خلي أول عنصر كوظيفة أساسية
-
-  //       // إذا موجود Analyst كبداية يمكن تعيينه كوظيفة أساسية
-  //       individualJob.value = types.isNotEmpty ? types.first : '';
-
-  //       // باقي الوظائف بدون أول عنصر
-  //       // mediaWorkTypes.value = types.length > 1 ? types.sublist(1) : [];
-
-  //       socialLinksCtrl.text = data["socialLinks"] ?? "";
-  //       available.value = data['available'] ?? false; // <-- هذا السطر الجديد
-  //     } else if (accountType.value == "company") {
-  //       available.value = data['available'] ?? false; // <-- هذا السطر الجديد
-
-  //       companyNameCtrl.text = data["companyName"] ?? "";
-  //       emailCtrl.text = data["email"] ?? "";
-  //       phoneCtrl.text = data["phone"] ?? "";
-  //       countryCtrl.text = data["country"] ?? "";
-  //       websiteCtrl.text = data["website"] ?? "";
-  //       descriptionCtrl.text = data["description"] ?? "";
-  //     }
-  //     payoutProfile.value = data['payoutProfile'] ?? {};
-
-  //     available.value = data['available'] ?? false;
-  //     final teamDoc = await firestore.collection('team').doc(uid).get();
-  //     if (teamDoc.exists) {
-  //       final teamData = teamDoc.data()!;
-  //       hourlyRate.value = (teamData['hourlyRate'] ?? 0).toDouble();
-  //       dailyRate.value = (teamData['dailyRate'] ?? 0).toDouble();
-  //       projectRate.value = (teamData['projectRate'] ?? 0).toDouble();
-  //       available.value = teamData['available'] ?? available.value;
-  //     }
-  //   } catch (e) {
-  //     Get.snackbar("Error", "Failed to load profile: $e");
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
   Future<void> getProfile() async {
     try {
       isLoading.value = true;
@@ -151,7 +86,14 @@ class ProfileController extends GetxController {
         emailCtrl.text = data["email"]?.toString() ?? "";
         phoneCtrl.text = data["phone"]?.toString() ?? "";
         countryCtrl.text = data["country"]?.toString() ?? "";
-        analystSpecialty.value = data["analystSpecialty"]?.toString() ?? '';
+        // داخل getProfile
+        if (data["analystSpecialty"] is List) {
+          analystSpecialty.value = List<String>.from(data["analystSpecialty"]);
+        } else if (data["analystSpecialty"] != null &&
+            data["analystSpecialty"] != "") {
+          // للتعامل مع البيانات القديمة لو كانت String
+          analystSpecialty.value = [data["analystSpecialty"].toString()];
+        }
         socialLinksCtrl.text = data["socialLinks"]?.toString() ?? "";
 
         if (data["mediaWorkTypes"] is List) {
@@ -236,6 +178,17 @@ class ProfileController extends GetxController {
       );
       return;
     }
+    final cleanStatus = kycStatus.value.trim().toLowerCase();
+    if (cleanStatus != 'approved') {
+      Get.snackbar(
+        "KYC Verification Required",
+        "Your account must be 'Approved' to become available. Current status: ${cleanStatus.isEmpty ? 'Not Started' : cleanStatus.toUpperCase()}",
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+      available.value = false;
+      return;
+    }
     final paypalData = payoutProfile['paypal'];
     final stripeData = payoutProfile['stripe'];
     bool isPaypalReady =
@@ -265,21 +218,34 @@ class ProfileController extends GetxController {
       return;
     }
     try {
-      available.value = val;
+      WriteBatch batch = FirebaseFirestore.instance.batch();
 
-      // تحديث users document (اختياري)
-      await firestore.collection('users').doc(uid).update({'available': val});
+      DocumentReference userRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid);
+      DocumentReference teamRef = FirebaseFirestore.instance
+          .collection('team')
+          .doc(uid);
 
-      // تحديث team document
-      final teamRef = firestore.collection('team').doc(uid);
+      batch.update(userRef, {'available': val});
+
+      // نتحقق إذا كان التيم موجود قبل الإضافة للباتش
       final teamDoc = await teamRef.get();
       if (teamDoc.exists) {
-        await teamRef.update({'available': val});
+        batch.update(teamRef, {'available': val});
       }
 
-      Get.snackbar("Success", "Availability updated");
+      await batch.commit();
+      available.value = val;
+      Get.snackbar(
+        "Success",
+        "You are now ${val ? 'Online' : 'Offline'}",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
     } catch (e) {
-      Get.snackbar("Error", "Failed to update availability: $e");
+      available.value = !val; // التراجع في حال الفشل
+      Get.snackbar("Error", "Could not update availability: $e");
     }
   }
 
@@ -332,6 +298,31 @@ class ProfileController extends GetxController {
     mediaWorkTypes.remove(type);
   }
 
+  // داخل ProfileController
+  bool get isProfileIncomplete {
+    // 1. فحص الأسعار
+    bool ratesIncomplete =
+        hourlyRate.value <= 0 || dailyRate.value <= 0 || projectRate.value <= 0;
+
+    // 2. فحص التوثيق
+    bool kycNotApproved = kycStatus.value.trim().toLowerCase() != 'approved';
+
+    // 3. فحص الدفع (Payout)
+    final paypalData = payoutProfile['paypal'];
+    final stripeData = payoutProfile['stripe'];
+    bool paypalReady =
+        paypalData != null &&
+        paypalData['enabled'] == true &&
+        (paypalData['paypalEmail']?.toString().isNotEmpty ?? false);
+    bool stripeReady =
+        stripeData != null &&
+        stripeData['enabled'] == true &&
+        (stripeData['stripeConnectAccountId']?.toString().isNotEmpty ?? false);
+    bool payoutIncomplete = !paypalReady && !stripeReady;
+
+    return ratesIncomplete || kycNotApproved || payoutIncomplete;
+  }
+
   Future<void> saveProfile() async {
     try {
       isLoading.value = true;
@@ -349,7 +340,7 @@ class ProfileController extends GetxController {
         "phone": phoneCtrl.text,
         "country": countryCtrl.text,
         "mediaWorkTypes": allJobs,
-        "analystSpecialty": analystSpecialty.value,
+        "analystSpecialty": analystSpecialty.toList(),
         "socialLinks": socialLinksCtrl.text,
         "fullName": fullNameCtrl.text,
         "hourlyRate": hourlyRate.value,
@@ -372,15 +363,22 @@ class ProfileController extends GetxController {
         final teamDoc = await firestore.collection('team').doc(uid).get();
         if (teamDoc.exists) {
           Map<String, dynamic> teamData = {
-            "title": allJobs.isNotEmpty ? allJobs.first : "",
+            "id": uid,
+            "name": fullNameCtrl.text,
+            "title": individualJob.value,
+            "country": countryCtrl.text,
+            "location": countryCtrl.text,
             "specialties": allJobs,
+            "analystSpecialty": analystSpecialty.toList(), // حفظ في التيم أيضاً
             "hourlyRate": hourlyRate.value,
             "dailyRate": dailyRate.value,
             "projectRate": projectRate.value,
             "available": available.value,
+            "type": accountType.value,
+            "lastUpdate": FieldValue.serverTimestamp(),
           };
 
-          await firestore.collection('team').doc(uid).update(teamData);
+          await firestore.collection('team').doc(uid).set(teamData);
         }
       } catch (_) {}
 

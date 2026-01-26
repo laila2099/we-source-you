@@ -48,8 +48,7 @@ exports.sendPayout = require('./payouts').sendPayout;
 exports.getPayoutSettings = require('./payouts').getPayoutSettings;
 exports.setDefaultPayoutProvider = require('./payouts').setDefaultPayoutProvider;
 exports.autoSendPayoutOnQueuedCreated = require('./payouts').autoSendPayoutOnQueuedCreated;
-
-// KYC
+exports.autoRetryPayoutOnFailedUpdated = require('./payouts').autoRetryPayoutOnFailedUpdated;
 
 // Admin Manual KYC Function
 exports.onKycStatusChange = require('./admin_kyc').onKycStatusChange;

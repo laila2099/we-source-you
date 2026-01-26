@@ -115,7 +115,7 @@ async function applyPaymentSucceeded({
 
     const now = admin.firestore.Timestamp.now();
     const downloadDeadline = admin.firestore.Timestamp.fromMillis(
-      now.toMillis() + 5 * 60 * 1000, // 5 minutes for testing
+      now.toMillis() + 365 * DAY_MS, // 5 minutes for testing
     );
 
     // Transaction (fee + purchase + paidCount)

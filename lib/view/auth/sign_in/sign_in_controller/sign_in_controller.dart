@@ -39,9 +39,10 @@ class SignInController extends GetxController {
       print("FCM Token: $token"); // ✅ اطبع للتأكد
 
       if (token != null && token.isNotEmpty) {
-        await _firestore.collection('users').doc(uid).set({
+        await _firestore.collection('users').doc(uid).update({
           'fcmToken': token,
-        }, SetOptions(merge: true));
+        });
+        //SetOptions(merge: true)
 
         print("FCM token saved for user $uid");
       } else {

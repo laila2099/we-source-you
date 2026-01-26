@@ -19,9 +19,6 @@ class _TeamViewState extends State<TeamView> {
   @override
   void initState() {
     super.initState();
-    // if (!Get.isRegistered<TeamController>()) {
-    //   Get.put(TeamController());
-    // }
   }
 
   @override
@@ -65,7 +62,7 @@ class _TeamViewState extends State<TeamView> {
                 );
               },
               maxWidth: 600,
-              showFilterButton: !isDesktop, // ✅ تظهر فقط على الموبايل
+              showFilterButton: !isDesktop,
             ),
           ),
 
