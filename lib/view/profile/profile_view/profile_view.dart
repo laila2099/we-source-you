@@ -115,12 +115,12 @@ class ProfileScreen extends StatelessWidget {
                 );
               },
             ),
-            TextButton(
-              onPressed: () {
-                Get.toNamed(AppRoutes.kyc);
-              },
-              child: Text("Navigate"),
-            ),
+            // TextButton(
+            //   onPressed: () {
+            //     Get.toNamed(AppRoutes.kyc);
+            //   },
+            //   child: Text("Navigate"),
+            // ),
             if (authController.role.value == 'admin')
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -209,6 +209,7 @@ class ProfileScreen extends StatelessWidget {
                 controller.countryCtrl,
                 controller.isEditing,
               ),
+              _buildRatesSection(),
               const SizedBox(height: 20),
               _buildMediaWorkTypesSection(),
             ] else ...[
@@ -237,6 +238,7 @@ class ProfileScreen extends StatelessWidget {
                 controller.websiteCtrl,
                 controller.isEditing,
               ),
+              _buildRatesSection(),
             ],
 
             const SizedBox(height: 24),
@@ -282,20 +284,108 @@ class ProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
             const Divider(),
+
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Get.toNamed(AppRoutes.payoutSettings);
+                  },
+                  child: Text("Payout Settings"),
+                ),
+                SizedBox(width: 16),
+                Icon(Icons.arrow_forward_ios),
+              ],
+            ),
             Obx(() {
               return Row(
                 children: [
                   const Text("Available: "),
                   Switch(
                     value: controller.available.value,
-                    onChanged: (val) => controller.toggleAvailability(val),
+                    onChanged: controller.canBeAvailable
+                        ? (val) => controller.toggleAvailability(val)
+                        : null, // disabled if rates are missing
                   ),
                 ],
               );
             }),
 
             const SizedBox(height: 16),
+            // ---------------- KYC Status ----------------
+            Obx(() {
+              // تنظيف النص لضمان دقة المقارنة
+              final status = controller.kycStatus.value.trim().toLowerCase();
 
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text(
+                    "KYC Status",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // 1. حالة الرفض: عرض نص REJECTED وتحته زر المحاولة مرة أخرى
+                  if (status == 'rejected') ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        "REJECTED ❌",
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                      ),
+                      onPressed: () => Get.toNamed(AppRoutes.kyc),
+                      child: const Text("Re-submit KYC Verification"),
+                    ),
+                  ]
+                  // 2. حالة لم يبدأ بعد (فارغ): عرض زر البدء فقط
+                  else if (status.isEmpty)
+                    ElevatedButton(
+                      onPressed: () => Get.toNamed(AppRoutes.kyc),
+                      child: const Text("Start KYC Verification"),
+                    )
+                  // 3. حالة الانتظار أو القبول: عرض الحالة فقط بدون أزرار
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: status == 'approved'
+                            ? Colors.green.shade100
+                            : Colors.blue.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        status.toUpperCase(),
+                        style: TextStyle(
+                          color: status == 'approved'
+                              ? Colors.green.shade800
+                              : Colors.blue.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            }),
             // ---------------- User Proposals ----------------
             const Text(
               "My Proposals",
@@ -468,6 +558,45 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildRatesSection() {
+    return Obx(() {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Rates", style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          _profileField(
+            "Hourly Rate",
+            TextEditingController()
+              ..text = controller.hourlyRate.value.toString(),
+            controller.isEditing,
+            maxLines: 1,
+            onChanged: (val) =>
+                controller.hourlyRate.value = double.tryParse(val) ?? 0,
+          ),
+          _profileField(
+            "Daily Rate",
+            TextEditingController()
+              ..text = controller.dailyRate.value.toString(),
+            controller.isEditing,
+            maxLines: 1,
+            onChanged: (val) =>
+                controller.dailyRate.value = double.tryParse(val) ?? 0,
+          ),
+          _profileField(
+            "Project Rate",
+            TextEditingController()
+              ..text = controller.projectRate.value.toString(),
+            controller.isEditing,
+            maxLines: 1,
+            onChanged: (val) =>
+                controller.projectRate.value = double.tryParse(val) ?? 0,
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildUserProposalCard(ProposalModel proposal) {
@@ -755,6 +884,7 @@ class ProfileScreen extends StatelessWidget {
     RxBool isEdit, {
     bool obscure = false,
     int maxLines = 1,
+    Function(String)? onChanged,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -781,6 +911,7 @@ class ProfileScreen extends StatelessWidget {
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                       ),
+                      onChanged: onChanged,
                     )
                   : Padding(
                       padding: const EdgeInsets.only(top: 12),

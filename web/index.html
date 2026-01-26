@@ -60,7 +60,7 @@
   Notification.requestPermission().then((permission) => {
     if (permission === 'granted') {
       console.log("Notification permission granted.");
-      getToken(messaging, { vapidKey: "YOUR_WEB_VAPID_KEY" }).then((token) => {
+      getToken(messaging, { vapidKey: "BAkcxszqZjCdh_kEzt1b1HIy1_lvDzZNcHATZ6408maUvgr8GxTdHrBqcIvTf8Y0PfUQGTYL14RYSzaUnIoLmPQ" }).then((token) => {
         console.log("FCM Token:", token);
         // ممكن تخزن الـ token في Firestore للـ user الحالي
       });
@@ -74,6 +74,16 @@
     console.log("Message received: ", payload);
     // هنا ممكن تعمل Local Notification عبر JS أو Flutter interop
   });
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/firebase-messaging-sw.js')
+    .then(registration => {
+      console.log('SW registered:', registration.scope);
+    }).catch(err => {
+      console.log('SW registration failed:', err);
+    });
+}
 </script>
 
   <!-- Flutter bootstrap -->

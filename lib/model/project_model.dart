@@ -1,22 +1,3 @@
-// enum ProjectStatus {
-//   pendingPayment,
-//   inProgress,
-//   underReview,
-//   completed,
-//   inDispute,
-// }
-
-// class ProjectModel {
-//   final String id;
-//   final double budget;
-//   ProjectStatus status;
-
-//   ProjectModel({
-//     required this.id,
-//     required this.budget,
-//     this.status = ProjectStatus.pendingPayment,
-//   });
-// }
 enum ProjectStatus {
   pendingPayment,
   inProgress,
@@ -36,7 +17,6 @@ class ProjectModel {
     this.status = ProjectStatus.pendingPayment,
   });
 
-  // كونستركتور ثابت لإنشاء مشروع افتراضي
   factory ProjectModel.empty() {
     return ProjectModel(
       id: '',

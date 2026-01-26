@@ -7,6 +7,7 @@ import 'package:we_source_you/core/constant/text_style.dart';
 import 'package:we_source_you/routes/app_routes.dart';
 import 'package:we_source_you/view/auth/sign_in/sign_in_controller/sign_in_controller.dart';
 import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
+import 'package:we_source_you/widgets/custom_text_form/custom_text_form.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -89,6 +90,8 @@ class _LoginFormState extends State<LoginForm> {
               ],
             ),
           ),
+          SizedBox(height: 5.h),
+
           const Text(
             'Media Talent',
             style: TextStyle(fontSize: 14, color: Colors.grey),
@@ -107,22 +110,6 @@ class _LoginFormState extends State<LoginForm> {
           ),
           const SizedBox(height: 30),
 
-          // Google
-          // OutlinedButton.icon(
-          //   onPressed: () {},
-          //   icon: Text('G', style: Theme.of(context).textTheme.labelLarge),
-          //   label: Text(
-          //     'Continue with Google',
-          //     style: Theme.of(context).textTheme.labelLarge,
-          //   ),
-          //   style: OutlinedButton.styleFrom(
-          //     minimumSize: Size(double.infinity, 50.h),
-          //     foregroundColor: Colors.black,
-          //     shape: RoundedRectangleBorder(
-          //       borderRadius: BorderRadius.circular(4.r),
-          //     ),
-          //   ),
-          // ),
           const SizedBox(height: 20),
 
           // OR
@@ -138,61 +125,18 @@ class _LoginFormState extends State<LoginForm> {
           ),
           const SizedBox(height: 20),
 
-          // Email
-          TextField(
-            controller: emailController,
+          CustomTextField(
+            labelText: 'Email Address',
             keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              labelText: 'Email Address',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4.0),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4.0),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4.0),
-                borderSide: BorderSide(color: Theme.of(context).primaryColor),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 16,
-              ),
-            ),
-            onChanged: (value) {
-              controller.email.value = value;
-            },
+            onChanged: (value) => controller.email.value = value,
           ),
+
           const SizedBox(height: 20),
 
-          // Password
-          TextField(
-            controller: passwordController,
-            obscureText: true,
-            decoration: InputDecoration(
-              labelText: 'Password',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4.0),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4.0),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4.0),
-                borderSide: BorderSide(color: Theme.of(context).primaryColor),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 16,
-              ),
-            ),
-            onChanged: (value) {
-              controller.password.value = value;
-            },
+          CustomTextField(
+            labelText: 'Password',
+            isPassword: true,
+            onChanged: (value) => controller.password.value = value,
           ),
           const SizedBox(height: 10),
 
@@ -213,7 +157,8 @@ class _LoginFormState extends State<LoginForm> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () =>
+                    controller.resetPassword(), // استدعاء الدالة هنا
                 child: const Text(
                   'Forgot Password?',
                   style: TextStyle(color: AppColors.darkBlue, fontSize: 13),

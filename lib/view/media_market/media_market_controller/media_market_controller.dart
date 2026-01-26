@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/model/category_item.dart';
 import 'package:we_source_you/model/media_item.dart';
+import 'package:we_source_you/routes/app_routes.dart';
 
 import '../../../core/payments/payment_context.dart';
 import '../../../core/payments/payment_provider.dart';
@@ -195,8 +196,8 @@ class MediaController extends GetxController {
   ///  ---------------------- Payment ----------------------
   Future<void> buy(String itemId, PaymentProvider provider) async {
     final baseUrl = Uri.base.origin;
-    final successUrl = '$baseUrl/#/media';
-    final cancelUrl = '$baseUrl/#/media';
+    final successUrl = '$baseUrl/#${AppRoutes.myLibrary}';
+    final cancelUrl = '$baseUrl/#${AppRoutes.media}';
 
     print(itemId);
 
@@ -219,8 +220,15 @@ class MediaController extends GetxController {
     final data = Map<String, dynamic>.from(res.data as Map);
     final url = data['url'] as String?;
     if (url == null || url.isEmpty) throw Exception('Missing signed url');
+    if (Get.isDialogOpen!) Get.back();
 
+    if (url == null || url.isEmpty) throw Exception('Missing signed url');
     html.window.open(url, '_blank');
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (Get.currentRoute != AppRoutes.myLibrary) {
+        Get.toNamed(AppRoutes.myLibrary);
+      }
+    });
   }
 
   @override

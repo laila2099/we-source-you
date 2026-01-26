@@ -21,7 +21,7 @@ exports.onKycStatusChange = onDocumentUpdated('users/{uid}', async (event) => {
     body: statusText,
     type: 'kyc',
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    read: false,
+    isRead: false,
   });
 
   // FCM
@@ -32,8 +32,16 @@ exports.onKycStatusChange = onDocumentUpdated('users/{uid}', async (event) => {
   await admin.messaging().send({
     token: fcmToken,
     notification: {
+      // أضف هذا الجزء
       title: 'KYC Update',
       body: statusText,
+    },
+    webpush: {
+      notification: {
+        title: 'KYC Update',
+        body: statusText,
+        icon: '/icons/app_icon.png', // تأكد من مسار الأيقونة
+      },
     },
   });
 });

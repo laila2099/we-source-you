@@ -53,6 +53,23 @@ class TeamModel {
     required String id,
     required Map<String, dynamic> map,
   }) {
+    double asDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    // دالة مساعدة لتحويل القيمة إلى int بأمان
+    int asInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
     String type = (map['type'] ?? 'journalist').toLowerCase();
 
     return TeamModel(
@@ -70,15 +87,15 @@ class TeamModel {
       title: map['title'] ?? '',
       country: map['country'] ?? '',
       location: map['location'] ?? 'Not specified',
-      rating: (map['rating'] ?? 0).toDouble(),
-      reviews: map['reviews'] ?? 0,
+      rating: asDouble(map['rating']),
+      reviews: asInt(map['reviews']),
       specialties: List<String>.from(map['specialties'] ?? []),
       projects: map['projects']?.toString() ?? '0',
       clients: map['clients']?.toString() ?? '0',
       years: map['years']?.toString() ?? '0',
-      hourlyRate: (map['hourlyRate'] ?? 0).toDouble(),
-      dailyRate: (map['dailyRate'] ?? 0).toDouble(),
-      projectRate: (map['projectRate'] ?? 0).toDouble(),
+      hourlyRate: asDouble(map['hourlyRate']),
+      dailyRate: asDouble(map['dailyRate']),
+      projectRate: asDouble(map['projectRate']),
       isCompany: type == 'company',
       available: map['available'] ?? false,
     );

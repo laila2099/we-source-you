@@ -32,6 +32,7 @@ class AuthController extends GetxController {
   RxString website = ''.obs;
 
   bool rememberMe = false;
+  RxBool isUserDataLoaded = false.obs;
 
   @override
   void onInit() {
@@ -117,6 +118,7 @@ class AuthController extends GetxController {
       companyName.value =
           data['companyName']?.toString() ?? data['name']?.toString() ?? '';
       website.value = data['website']?.toString() ?? '';
+      isUserDataLoaded.value = true;
 
       // Cache locally
       await box.write('role', role.value);
@@ -156,9 +158,31 @@ class AuthController extends GetxController {
   // ---------------------------
   // Routing
   // ---------------------------
+  // void _handlePostLoginRouting() {
+  //   if (!isLoggedIn.value) return;
+
+  //   if (role.value == 'admin') {
+  //     Get.offAllNamed(AppRoutes.adminDashboard);
+  //   } else {
+  //     Get.offAllNamed(AppRoutes.home);
+  //   }
+  // }
   void _handlePostLoginRouting() {
     if (!isLoggedIn.value) return;
 
+    // 1. تحقق مما إذا كان المستخدم قادماً من عملية دفع أو في مسار المكتبة حالياً
+    // في الويب، المسار الحالي يمنعنا من عمل إعادة توجيه قسرية للهوم
+    String currentRoute = Get.currentRoute;
+
+    if (currentRoute == AppRoutes.myLibrary ||
+        currentRoute.contains('payment-success')) {
+      debugPrint(
+        "العودة من الدفع: تم إيقاف التوجيه التلقائي للحفاظ على المسار الحالي",
+      );
+      return; // توقف هنا ولا تذهب للهوم
+    }
+
+    // 2. التوجيه الطبيعي عند فتح التطبيق لأول مرة فقط
     if (role.value == 'admin') {
       Get.offAllNamed(AppRoutes.adminDashboard);
     } else {

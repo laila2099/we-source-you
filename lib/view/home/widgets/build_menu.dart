@@ -10,7 +10,7 @@ Widget buildMenu(BuildContext context) {
   final isLoggedIn = authController.isLoggedIn.value;
 
   final titles = isLoggedIn
-      ? ["Home", "Jobs", "Our Team", "Logout", "Media Market"]
+      ? ["Home", "Jobs", "Our Team", "Media Market"]
       : ["Home", "Sign Up", "Sign In", "Jobs", "Our Team", "Media Market"];
 
   return SlideTransition(

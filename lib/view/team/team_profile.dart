@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:we_source_you/core/constant/app_color.dart';
 import 'package:we_source_you/model/team_model.dart';
+import 'package:we_source_you/view/team/team_controller/team_controller.dart';
+import 'package:we_source_you/view/team/widget/team_rating.dart';
 import 'package:we_source_you/widgets/circular_icon/circular_icon.dart';
 import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
 
@@ -474,6 +476,7 @@ class TeamProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final TeamController controller = Get.find<TeamController>();
     final TextStyle nameStyle =
         Theme.of(context).textTheme.headlineSmall?.copyWith(
           fontWeight: FontWeight.bold,
@@ -656,19 +659,33 @@ class TeamProfileView extends StatelessWidget {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceAround,
                                     children: [
-                                      _StatColumn(
-                                        count:
-                                            member.projects?.toString() ?? '0',
-                                        label: 'Projects',
+                                      FutureBuilder<int>(
+                                        future: controller
+                                            .getAcceptedProjectsCount(
+                                              member.id,
+                                            ),
+                                        builder: (context, snapshot) {
+                                          final count =
+                                              snapshot.data?.toString() ??
+                                              '...';
+                                          return _StatColumn(
+                                            count: count,
+                                            label: 'Projects',
+                                          );
+                                        },
                                       ),
-                                      _StatColumn(
-                                        count:
-                                            member.clients?.toString() ?? '0',
-                                        label: 'Clients',
-                                      ),
-                                      _StatColumn(
-                                        count: member.years?.toString() ?? '0',
-                                        label: 'Years',
+                                      FutureBuilder<int>(
+                                        future: controller
+                                            .getUniqueClientsCount(member.id),
+                                        builder: (context, snapshot) {
+                                          // إذا كان لسه عم يحمل بنعرض "..." أو "0"
+                                          final count =
+                                              snapshot.data?.toString() ?? '0';
+                                          return _StatColumn(
+                                            count: count,
+                                            label: 'Clients',
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),
@@ -707,28 +724,34 @@ class TeamProfileView extends StatelessWidget {
                                   const SizedBox(height: 20),
                                   Text('Reviews', style: nameStyle),
                                   const SizedBox(height: 10),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        '${member.rating?.toStringAsFixed(1) ?? '0.0'} ',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                      const Icon(
-                                        Icons.star,
-                                        color: Colors.amber,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        '(${member.reviews ?? 0} reviews)',
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
+                                  // Row(
+                                  //   children: [
+                                  //     Text(
+                                  //       '${member.rating?.toStringAsFixed(1) ?? '0.0'} ',
+                                  //       style: const TextStyle(
+                                  //         fontWeight: FontWeight.bold,
+                                  //         fontSize: 18,
+                                  //       ),
+                                  //     ),
+                                  //     const Icon(
+                                  //       Icons.star,
+                                  //       color: Colors.amber,
+                                  //       size: 20,
+                                  //     ),
+                                  //     const SizedBox(width: 8),
+                                  //     Text(
+                                  //       '(${member.reviews ?? 0} reviews)',
+                                  //       style: const TextStyle(
+                                  //         color: Colors.grey,
+                                  //       ),
+                                  //     ),
+                                  //   ],
+                                  // ),
+                                  TeamRatingWidget(
+                                    teamMemberId: member.id ?? "",
+                                    onRatingUpdated: (avg, count) {
+                                      // يمكنك هنا تحديث حالة الصفحة إذا لزم الأمر
+                                    },
                                   ),
                                 ],
                               ),
@@ -741,8 +764,21 @@ class TeamProfileView extends StatelessWidget {
                                 children: [
                                   Text('Projects', style: nameStyle),
                                   const SizedBox(height: 10),
-                                  Text(
-                                    'Total Projects: ${member.projects ?? 0}',
+                                  FutureBuilder<int>(
+                                    future: controller.getAcceptedProjectsCount(
+                                      member.id,
+                                    ), // استخدمي member.id
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const CircularProgressIndicator();
+                                      }
+                                      final count =
+                                          snapshot.data?.toString() ?? '0';
+                                      return Text(
+                                        'Total Approved Projects: $count',
+                                      );
+                                    },
                                   ),
                                 ],
                               ),

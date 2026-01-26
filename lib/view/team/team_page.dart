@@ -11,6 +11,15 @@ class TeamResultsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<TeamController>();
+
+    // حساب عدد الأعمدة بناءً على عرض الشاشة
+    int getCrossAxisCount(BuildContext context) {
+      double width = MediaQuery.of(context).size.width;
+      if (width >= 1100) return 3; // Desktop
+      if (width >= 600) return 2; // Tablet
+      return 1; // Mobile
+    }
+
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(child: CircularProgressIndicator());
@@ -20,15 +29,19 @@ class TeamResultsList extends StatelessWidget {
         return const Center(child: Text('No team members found'));
       }
 
-      return ListView.builder(
+      return GridView.builder(
         padding: const EdgeInsets.all(24),
         itemCount: team.length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: getCrossAxisCount(context), // عدد الأعمدة الديناميكي
+          crossAxisSpacing: 20, // المسافة الأفقية بين الكروت
+          mainAxisSpacing: 20, // المسافة الرأسية بين الكروت
+          // هذا الحقل مهم جداً لضبط ارتفاع الكارت، جربي تغيير القيمة حتى تناسب محتوى الـ TeamCard
+          childAspectRatio: 0.9,
+        ),
         itemBuilder: (context, index) {
           final member = team[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: TeamCard(journalist: member),
-          );
+          return TeamCard(journalist: member);
         },
       );
     });
@@ -74,6 +87,7 @@ class _TeamFilterSidebarState extends State<TeamFilterSidebar> {
     'Photography',
     'Graphic Design',
     'Legal Consulting',
+    'Web Designer',
   ];
 
   String? _selectedCountry;

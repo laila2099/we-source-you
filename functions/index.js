@@ -12,11 +12,9 @@ exports.webhooksPaypalDev = require('./paypal/paypalWebhook').webhooksPaypalDev;
 
 exports.acceptProposal = require('./proposals').acceptProposal;
 
-
-
 exports.getDownloadUrl = require('./downloads').getDownloadUrl;
-exports.getDeliveryDownloadUrlByConversation = require('./downloads').getDeliveryDownloadUrlByConversation;
-
+exports.getDeliveryDownloadUrlByConversation =
+  require('./downloads').getDeliveryDownloadUrlByConversation;
 
 exports.submitDeliveryByConversation = require('./contracts').submitDeliveryByConversation;
 exports.approveDeliveryByConversation = require('./contracts').approveDeliveryByConversation;
@@ -28,40 +26,30 @@ exports.releasePayout = require('./contracts').releasePayout;
 //exports.autoPayoutAfterClientApprove = require('./contracts').autoPayoutAfterClientApprove;
 exports.rejectDeliveryByConversation = require('./contracts').rejectDeliveryByConversation;
 
-
 exports.submitDisputeMessageByConversation =
   require('./disputes').submitDisputeMessageByConversation;
 
 exports.getDisputeAttachmentUrlByConversation =
   require('./disputes').getDisputeAttachmentUrlByConversation;
 
-
 exports.createHireMeContract = require('./hireme').createHireMeContract;
 exports.sendHireOfferByConversation = require('./hireme').sendHireOfferByConversation;
-exports.acceptHireOfferPrepareRemainingPayment = require('./hireme').acceptHireOfferPrepareRemainingPayment;
-exports.cancelHireNoAgreementByConversation = require('./hireme').cancelHireNoAgreementByConversation;
-exports.rejectHireOfferByConversation =
-  require('./hireme').rejectHireOfferByConversation;
+exports.acceptHireOfferPrepareRemainingPayment =
+  require('./hireme').acceptHireOfferPrepareRemainingPayment;
+exports.cancelHireNoAgreementByConversation =
+  require('./hireme').cancelHireNoAgreementByConversation;
+exports.rejectHireOfferByConversation = require('./hireme').rejectHireOfferByConversation;
 
+exports.setPayoutProfilePayPal = require('./payouts_setup').setPayoutProfilePayPal;
 
-exports.setPayoutProfilePayPal =
-    require('./payouts_setup').setPayoutProfilePayPal;
+exports.createStripeAccountLink = require('./payouts_setup').createStripeAccountLink;
 
-exports.createStripeAccountLink =
-    require('./payouts_setup').createStripeAccountLink;
-
-exports.sendPayout =
-    require('./payouts').sendPayout;
+exports.sendPayout = require('./payouts').sendPayout;
 exports.getPayoutSettings = require('./payouts').getPayoutSettings;
 exports.setDefaultPayoutProvider = require('./payouts').setDefaultPayoutProvider;
 exports.autoSendPayoutOnQueuedCreated = require('./payouts').autoSendPayoutOnQueuedCreated;
 
-
-
-
 // KYC
-exports.createSumsubAccessToken = require('./sumsub').createSumsubAccessToken;
-exports.sumsubWebhook = require('./sumsubWebhooks').sumsubWebhook;
 
 // Admin Manual KYC Function
 exports.onKycStatusChange = require('./admin_kyc').onKycStatusChange;

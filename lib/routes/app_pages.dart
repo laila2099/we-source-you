@@ -43,7 +43,7 @@ final appPages = <GetPage>[
   GetPage(name: AppRoutes.kyc, page: () => KYCUploadPage()),
   GetPage(
     name: AppRoutes.adminDashboard,
-    page: () => AdminKYCPage(),
+    page: () => AdminPanelScreen(),
     middlewares: [AdminMiddleware()],
   ),
   GetPage(name: AppRoutes.myLibrary, page: () => MyLibraryPage()),

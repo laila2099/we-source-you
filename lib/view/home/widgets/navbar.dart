@@ -55,8 +55,13 @@ Widget buildNavbar(bool isDesktop, BuildContext context) {
                       navButton("Sign In", context, controller: controller),
                     ],
                   );
+                } else if (!authController.isUserDataLoaded.value) {
+                  // Loading state
+                  return const CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  );
                 } else {
-                  // Desktop -> show username
                   return Row(
                     children: [
                       userAvatarMenu(

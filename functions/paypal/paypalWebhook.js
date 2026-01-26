@@ -10,9 +10,7 @@ const db = admin.firestore();
 exports.webhooksPaypalDev = onRequest({ cors: true, invoker: 'public' }, async (req, res) => {
   let event;
   try {
-    event = typeof req.body === 'object'
-      ? req.body
-      : JSON.parse(req.rawBody?.toString?.() || '{}');
+    event = typeof req.body === 'object' ? req.body : JSON.parse(req.rawBody?.toString?.() || '{}');
   } catch (e) {
     console.error('paypalWebhook: bad json', e);
     return res.sendStatus(200);

@@ -115,7 +115,7 @@ class JobCard extends GetView<JobsController> {
                   ),
                 ),
               ),
-              SizedBox(width: 15.w),
+              SizedBox(width: 5.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,11 +152,6 @@ class JobCard extends GetView<JobsController> {
                   ],
                 ),
               ),
-              _StatColumn(
-                label: 'Posted',
-                count:
-                    '${job.postedDate.day}/${job.postedDate.month}/${job.postedDate.year}',
-              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -173,8 +168,16 @@ class JobCard extends GetView<JobsController> {
           const SizedBox(height: 20),
           const Divider(),
           const SizedBox(height: 10),
-
-          // Stats (e.g., Posted Date, Contract)
+          Text(
+            job.details,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const Divider(),
+          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -193,23 +196,13 @@ class JobCard extends GetView<JobsController> {
             ],
           ),
           const SizedBox(height: 10),
-          const Divider(),
-          const SizedBox(height: 10),
-          Text(
-            job.details,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 20),
 
           // Apply Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () async {
+          if (job.endDate == null || job.endDate!.isAfter(DateTime.now()))
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                // onPressed: () async {
                 // Navigator.push(
                 //   context,
                 //   MaterialPageRoute(
@@ -228,21 +221,40 @@ class JobCard extends GetView<JobsController> {
                 //   '7VI8kmfNRmlCOcgZU5Je',
                 //   provider,
                 // );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.lightBlue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+                // },
+                onPressed: () => controller.applyForJob(job),
+
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.lightBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                child: const Text(
+                  'Apply Now',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
-              child: const Text(
-                'Apply Now',
-                style: TextStyle(fontWeight: FontWeight.bold),
+            )
+          else
+            // اختيارياً: يمكنك إظهار نص يفيد بأن التقديم مغلق
+            const SizedBox(
+              width: double.infinity,
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 15),
+                  child: Text(
+                    'Application Closed',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

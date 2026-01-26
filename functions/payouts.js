@@ -1,11 +1,9 @@
 // functions/src/payouts.js
 const { defineString, defineSecret } = require('firebase-functions/params');
 
-const PAYPAL_BASE_URL_SECRET  = defineSecret('PAYPAL_BASE_URL_SECRET'); // sandbox/live
+const PAYPAL_BASE_URL_SECRET = defineSecret('PAYPAL_BASE_URL_SECRET'); // sandbox/live
 const PAYPAL_CLIENT_ID_SECRET = defineSecret('PAYPAL_CLIENT_ID_SECRET');
 const PAYPAL_CLIENT_SECRET_SECRET = defineSecret('PAYPAL_CLIENT_SECRET_SECRET');
-
-
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
@@ -63,9 +61,8 @@ async function getPayPalAccessToken() {
   return json.access_token;
 }
 
-
 async function paypalCreatePayout({ receiverEmail, amount, currency, note, senderItemId }) {
-const base = PAYPAL_BASE_URL_SECRET.value();
+  const base = PAYPAL_BASE_URL_SECRET.value();
   const token = await getPayPalAccessToken();
 
   const body = {
@@ -100,240 +97,263 @@ const base = PAYPAL_BASE_URL_SECRET.value();
 }
 
 // ========= sendPayout =========
-exports.sendPayout = onCall({ cors: true, invoker: 'public', secrets: [PAYPAL_BASE_URL_SECRET, PAYPAL_CLIENT_ID_SECRET, PAYPAL_CLIENT_SECRET_SECRET] }, async (request) => {
-  const uid = requireAuth(request);
-  const { payoutId } = request.data;
-  assertString(payoutId, 'payoutId');
+exports.sendPayout = onCall(
+  {
+    cors: true,
+    invoker: 'public',
+    secrets: [PAYPAL_BASE_URL_SECRET, PAYPAL_CLIENT_ID_SECRET, PAYPAL_CLIENT_SECRET_SECRET],
+  },
+  async (request) => {
+    const uid = requireAuth(request);
+    const { payoutId } = request.data;
+    assertString(payoutId, 'payoutId');
 
-  const payoutRef = db.collection('payouts').doc(payoutId);
+    const payoutRef = db.collection('payouts').doc(payoutId);
 
-  // نقرأ payout ونعمل lock عبر Transaction
-  const result = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(payoutRef);
-    if (!snap.exists) throw new HttpsError('not-found', 'Payout not found');
+    // نقرأ payout ونعمل lock عبر Transaction
+    const result = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(payoutRef);
+      if (!snap.exists) throw new HttpsError('not-found', 'Payout not found');
 
-    const p = snap.data();
+      const p = snap.data();
 
-//    const ownerId = p.freelancerId || p.sellerId;
-//    if (ownerId !== uid) throw new HttpsError('permission-denied', 'Not allowed');
+      //    const ownerId = p.freelancerId || p.sellerId;
+      //    if (ownerId !== uid) throw new HttpsError('permission-denied', 'Not allowed');
 
-
-    if (p.status === 'sent' || p.status === 'sent_mock') {
-      return { already: true, provider: p.payoutProvider, ref: p.providerPayoutRef || null };
-    }
-
-    if (p.status !== 'queued') {
-      throw new HttpsError('failed-precondition', `Not queued. status=${p.status}`);
-    }
-
-    if (!p.payoutProvider || !p.destination) {
-      throw new HttpsError('failed-precondition', 'Missing payoutProvider/destination');
-    }
-    if (p.context === 'mediaMarket') {
-      if (!p.purchaseId) {
-        throw new HttpsError('failed-precondition', 'Missing purchaseId on payout');
+      if (p.status === 'sent' || p.status === 'sent_mock') {
+        return { already: true, provider: p.payoutProvider, ref: p.providerPayoutRef || null };
       }
 
-      const purRef = db.collection('purchases').doc(p.purchaseId);
-      const purSnap = await tx.get(purRef);
-      if (!purSnap.exists) throw new HttpsError('failed-precondition', 'Purchase not found');
-
-      const pur = purSnap.data();
-
-      // لازم تكون purchase paid + payoutStatus queued
-      if (pur.status !== 'paid') {
-        throw new HttpsError('failed-precondition', `Purchase not paid. status=${pur.status}`);
-      }
-      if (pur.payoutStatus !== 'queued' && p.status !== 'queued') {
-        throw new HttpsError('failed-precondition', `Purchase payout not queued. payoutStatus=${pur.payoutStatus}`);
+      if (p.status !== 'queued') {
+        throw new HttpsError('failed-precondition', `Not queued. status=${p.status}`);
       }
 
-    }  else {
-    // ✅ verify contract is paidOut before sending payout
-    if (!p.contractId) {
-      throw new HttpsError('failed-precondition', 'Missing contractId on payout');
-    }
+      if (!p.payoutProvider || !p.destination) {
+        throw new HttpsError('failed-precondition', 'Missing payoutProvider/destination');
+      }
+      if (p.context === 'mediaMarket') {
+        if (!p.purchaseId) {
+          throw new HttpsError('failed-precondition', 'Missing purchaseId on payout');
+        }
 
-    const cSnap = await tx.get(db.collection('contracts').doc(p.contractId));
-    if (!cSnap.exists) throw new HttpsError('failed-precondition', 'Contract not found for payout');
+        const purRef = db.collection('purchases').doc(p.purchaseId);
+        const purSnap = await tx.get(purRef);
+        if (!purSnap.exists) throw new HttpsError('failed-precondition', 'Purchase not found');
 
-    const c = cSnap.data();
-    // ✅ verify contract is ready for payout before sending
-    if (c.status !== 'payoutQueued') {
-      throw new HttpsError('failed-precondition', `Contract not payoutQueued. status=${c.status}`);
-    }}
+        const pur = purSnap.data();
 
+        // لازم تكون purchase paid + payoutStatus queued
+        if (pur.status !== 'paid') {
+          throw new HttpsError('failed-precondition', `Purchase not paid. status=${pur.status}`);
+        }
+        if (pur.payoutStatus !== 'queued' && p.status !== 'queued') {
+          throw new HttpsError(
+            'failed-precondition',
+            `Purchase payout not queued. payoutStatus=${pur.payoutStatus}`,
+          );
+        }
+      } else {
+        // ✅ verify contract is paidOut before sending payout
+        if (!p.contractId) {
+          throw new HttpsError('failed-precondition', 'Missing contractId on payout');
+        }
 
+        const cSnap = await tx.get(db.collection('contracts').doc(p.contractId));
+        if (!cSnap.exists)
+          throw new HttpsError('failed-precondition', 'Contract not found for payout');
 
-    // نعلّم payout "processing" قبل ما نطلع من transaction
-    tx.update(payoutRef, {
-      status: 'processing',
-      processingAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        const c = cSnap.data();
+        // ✅ verify contract is ready for payout before sending
+        if (c.status !== 'payoutQueued') {
+          throw new HttpsError(
+            'failed-precondition',
+            `Contract not payoutQueued. status=${c.status}`,
+          );
+        }
+      }
+
+      // نعلّم payout "processing" قبل ما نطلع من transaction
+      tx.update(payoutRef, {
+        status: 'processing',
+        processingAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return { already: false, payout: p };
     });
 
-    return { already: false, payout: p };
-  });
+    if (result.already) {
+      return {
+        ok: true,
+        alreadySent: true,
+        provider: result.provider,
+        providerPayoutRef: result.ref,
+      };
+    }
 
-  if (result.already) {
-    return { ok: true, alreadySent: true, provider: result.provider, providerPayoutRef: result.ref };
-  }
+    const p = result.payout;
+    const contractRef = p.contractId ? db.collection('contracts').doc(p.contractId) : null;
+    const purchaseRef = p.purchaseId ? db.collection('purchases').doc(p.purchaseId) : null;
 
-  const p = result.payout;
-  const contractRef = p.contractId ? db.collection('contracts').doc(p.contractId) : null;
-  const purchaseRef = p.purchaseId ? db.collection('purchases').doc(p.purchaseId) : null;
+    try {
+      // ===== Stripe Connect Transfer =====
+      if (p.payoutProvider === 'stripe') {
+        const stripe = getStripe();
 
+        const acct = p.destination?.stripeConnectAccountId;
+        if (!acct) throw new HttpsError('failed-precondition', 'Missing stripeConnectAccountId');
 
-  try {
-    // ===== Stripe Connect Transfer =====
-    if (p.payoutProvider === 'stripe') {
-      const stripe = getStripe();
+        const currency = (p.currency || 'EUR').toLowerCase();
+        const cents = toCents(p.freelancerNet ?? p.amount ?? p.grossAmount);
+        if (!cents) throw new HttpsError('failed-precondition', 'Invalid payout amount');
 
-      const acct = p.destination?.stripeConnectAccountId;
-      if (!acct) throw new HttpsError('failed-precondition', 'Missing stripeConnectAccountId');
+        // Transfer من رصيد المنصة -> للـ connected account
+        // (الـ payout من الـ connected account للبنك بيصير حسب schedule)
+        const transfer = await stripe.transfers.create({
+          amount: cents,
+          currency,
+          destination: acct,
+          metadata: {
+            payoutId,
+            contractId: p.contractId || '',
+          },
+        });
 
-      const currency = (p.currency || 'EUR').toLowerCase();
-      const cents = toCents(p.freelancerNet ?? p.amount ?? p.grossAmount);
-      if (!cents) throw new HttpsError('failed-precondition', 'Invalid payout amount');
+        await payoutRef.set(
+          {
+            status: 'sent',
+            sentAt: admin.firestore.FieldValue.serverTimestamp(),
+            providerPayoutRef: transfer.id,
+            providerResponse: { type: 'stripe_transfer' },
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
 
-      // Transfer من رصيد المنصة -> للـ connected account
-      // (الـ payout من الـ connected account للبنك بيصير حسب schedule)
-      const transfer = await stripe.transfers.create({
-        amount: cents,
-        currency,
-        destination: acct,
-        metadata: {
-          payoutId,
-          contractId: p.contractId || '',
-        },
-      });
+        const paidOutAt = admin.firestore.FieldValue.serverTimestamp();
 
-      await payoutRef.set(
-        {
-          status: 'sent',
-          sentAt: admin.firestore.FieldValue.serverTimestamp(),
-          providerPayoutRef: transfer.id,
-          providerResponse: { type: 'stripe_transfer' },
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
+        const disputeDeadline = admin.firestore.Timestamp.fromDate(
+          new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        );
+        const downloadDeadline = admin.firestore.Timestamp.fromDate(
+          new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+        );
 
-      const paidOutAt = admin.firestore.FieldValue.serverTimestamp();
+        if (p.context === 'mediaMarket') {
+          await purchaseRef.set(
+            {
+              payoutStatus: 'sent',
+              payoutSentAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+        } else {
+          await contractRef.set(
+            {
+              status: 'paidOut',
+              paidOutAt: admin.firestore.FieldValue.serverTimestamp(),
+              disputeDeadline,
+              downloadDeadline,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+        }
 
-      const disputeDeadline = admin.firestore.Timestamp.fromDate(
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-      );
-      const downloadDeadline = admin.firestore.Timestamp.fromDate(
-        new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-      );
-
-      if (p.context === 'mediaMarket') {
-        await purchaseRef.set({
-          payoutStatus: 'sent',
-          payoutSentAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
-      } else {
-        await contractRef.set({
-          status: 'paidOut',
-          paidOutAt: admin.firestore.FieldValue.serverTimestamp(),
-          disputeDeadline,
-          downloadDeadline,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
+        return { ok: true, provider: 'stripe', providerPayoutRef: transfer.id };
       }
 
+      // ===== PayPal Payouts =====
+      if (p.payoutProvider === 'paypal') {
+        const email = p.destination?.paypalPayoutEmail;
+        if (!email) throw new HttpsError('failed-precondition', 'Missing paypalPayoutEmail');
 
-      return { ok: true, provider: 'stripe', providerPayoutRef: transfer.id };
-    }
+        const currency = (p.currency || 'EUR').toUpperCase();
+        const amount = Number(p.freelancerNet ?? p.amount ?? p.grossAmount);
+        if (!Number.isFinite(amount) || amount <= 0)
+          throw new HttpsError('failed-precondition', 'Invalid payout amount');
 
-    // ===== PayPal Payouts =====
-    if (p.payoutProvider === 'paypal') {
-      const email = p.destination?.paypalPayoutEmail;
-      if (!email) throw new HttpsError('failed-precondition', 'Missing paypalPayoutEmail');
+        const resp = await paypalCreatePayout({
+          receiverEmail: email,
+          amount,
+          currency,
+          note: `Payout for contract ${p.contractId || ''}`,
+          senderItemId: payoutId,
+        });
 
-      const currency = (p.currency || 'EUR').toUpperCase();
-      const amount = Number(p.freelancerNet ?? p.amount ?? p.grossAmount);
-      if (!Number.isFinite(amount) || amount <= 0) throw new HttpsError('failed-precondition', 'Invalid payout amount');
+        // PayPal بيرجع batch id / payout batch id
+        const batchId = resp?.batch_header?.payout_batch_id || null;
 
-      const resp = await paypalCreatePayout({
-        receiverEmail: email,
-        amount,
-        currency,
-        note: `Payout for contract ${p.contractId || ''}`,
-        senderItemId: payoutId,
-      });
+        await payoutRef.set(
+          {
+            status: 'sent',
+            sentAt: admin.firestore.FieldValue.serverTimestamp(),
+            providerPayoutRef: batchId,
+            providerResponse: { type: 'paypal_payout', raw: resp },
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
 
-      // PayPal بيرجع batch id / payout batch id
-      const batchId = resp?.batch_header?.payout_batch_id || null;
+        const paidOutAt = admin.firestore.FieldValue.serverTimestamp();
+
+        const disputeDeadline = admin.firestore.Timestamp.fromDate(
+          new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        );
+        const downloadDeadline = admin.firestore.Timestamp.fromDate(
+          new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+        );
+
+        if (p.context === 'mediaMarket') {
+          await purchaseRef.set(
+            {
+              payoutStatus: 'sent',
+              payoutSentAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+        } else {
+          await contractRef.set(
+            {
+              status: 'paidOut',
+              paidOutAt,
+              disputeDeadline,
+              downloadDeadline,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+        }
+
+        return { ok: true, provider: 'paypal', providerPayoutRef: batchId };
+      }
+
+      throw new HttpsError('failed-precondition', `Unsupported payoutProvider=${p.payoutProvider}`);
+    } catch (e) {
+      console.error('sendPayout error', e);
 
       await payoutRef.set(
         {
-          status: 'sent',
-          sentAt: admin.firestore.FieldValue.serverTimestamp(),
-          providerPayoutRef: batchId,
-          providerResponse: { type: 'paypal_payout', raw: resp },
+          status: 'queued',
+          lastError: String(e?.message || e),
+          lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
-        { merge: true }
+        { merge: true },
       );
 
-      const paidOutAt = admin.firestore.FieldValue.serverTimestamp();
-
-      const disputeDeadline = admin.firestore.Timestamp.fromDate(
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-      );
-      const downloadDeadline = admin.firestore.Timestamp.fromDate(
-        new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-      );
-
-      if (p.context === 'mediaMarket') {
-              await purchaseRef.set({
-                payoutStatus: 'sent',
-                payoutSentAt: admin.firestore.FieldValue.serverTimestamp(),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              }, { merge: true });
-            } else {
-
-      await contractRef.set(
-        {
-          status: 'paidOut',
-          paidOutAt,
-          disputeDeadline,
-          downloadDeadline,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
-}
-
-      return { ok: true, provider: 'paypal', providerPayoutRef: batchId };
+      throw new HttpsError('internal', 'sendPayout failed');
     }
-
-    throw new HttpsError('failed-precondition', `Unsupported payoutProvider=${p.payoutProvider}`);
-  } catch (e) {
-    console.error('sendPayout error', e);
-
-    await payoutRef.set(
-      {
-        status: 'queued',
-        lastError: String(e?.message || e),
-        lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    throw new HttpsError('internal', 'sendPayout failed');
-  }
-});
+  },
+);
 
 exports.getPayoutSettings = onCall({ cors: true, invoker: 'public' }, async (request) => {
   const uid = requireAuth(request);
 
   const snap = await db.collection('users').doc(uid).get();
-  const u = snap.exists ? (snap.data() || {}) : {};
+  const u = snap.exists ? snap.data() || {} : {};
 
   const profiles = u.payoutProfile || {};
 
@@ -359,16 +379,15 @@ exports.setDefaultPayoutProvider = onCall({ cors: true, invoker: 'public' }, asy
 
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(userRef);
-    const u = snap.exists ? (snap.data() || {}) : {};
+    const u = snap.exists ? snap.data() || {} : {};
 
     const profiles = u.payoutProfile || {};
 
-    const hasPaypal =
-      !!profiles.paypal?.enabled && !!profiles.paypal?.paypalEmail;
+    const hasPaypal = !!profiles.paypal?.enabled && !!profiles.paypal?.paypalEmail;
 
     const hasStripe =
-      !!profiles.stripe?.enabled && !!profiles.stripe?.stripeConnectAccountId
-      || (legacy?.provider === 'stripe' && !!legacy.stripeConnectAccountId);
+      (!!profiles.stripe?.enabled && !!profiles.stripe?.stripeConnectAccountId) ||
+      (legacy?.provider === 'stripe' && !!legacy.stripeConnectAccountId);
 
     if (provider === 'paypal' && !hasPaypal) {
       throw new HttpsError('failed-precondition', 'PayPal payout not setup');
@@ -377,38 +396,37 @@ exports.setDefaultPayoutProvider = onCall({ cors: true, invoker: 'public' }, asy
       throw new HttpsError('failed-precondition', 'Stripe payout not setup');
     }
     if (provider === 'stripe') {
-        theOther = 'paypal';
-      } else {
-        theOther = 'stripe';
-      }
+      theOther = 'paypal';
+    } else {
+      theOther = 'stripe';
+    }
 
+    tx.set(
+      userRef,
+      {
+        payoutDefault: provider,
+        payoutProfile: {
+          [provider]: {
+            enabled: true,
+            provider,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          [theOther]: {
+            enabled: false,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+        },
 
-    tx.set(userRef, {
-      payoutDefault: provider,
-      payoutProfile:{
-        [provider]: {
-          enabled: true,
-          provider,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        [theOther]: {
-          enabled: false,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
-
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+      { merge: true },
+    );
   });
 
   return { ok: true };
 });
 
-
-
-const { onDocumentUpdated, onDocumentCreated } =
-  require('firebase-functions/v2/firestore');
-
+const { onDocumentUpdated, onDocumentCreated } = require('firebase-functions/v2/firestore');
 
 exports.autoSendPayoutOnQueuedCreated = onDocumentCreated(
   {
@@ -432,9 +450,8 @@ exports.autoSendPayoutOnQueuedCreated = onDocumentCreated(
     } catch (e) {
       console.error('autoSendPayoutOnQueuedCreated failed', e);
     }
-  }
+  },
 );
-
 
 async function sendPayoutInternal(payoutId) {
   const payoutRef = db.collection('payouts').doc(payoutId);
@@ -493,13 +510,16 @@ async function sendPayoutInternal(payoutId) {
         },
       });
 
-      await payoutRef.set({
-        status: 'sent',
-        sentAt: admin.firestore.FieldValue.serverTimestamp(),
-        providerPayoutRef: transfer.id,
-        providerResponse: { type: 'stripe_transfer' },
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true });
+      await payoutRef.set(
+        {
+          status: 'sent',
+          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+          providerPayoutRef: transfer.id,
+          providerResponse: { type: 'stripe_transfer' },
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
 
       // تحديث المرجع حسب السياق
       await markReferencePaidOutOrSent(p);
@@ -526,13 +546,16 @@ async function sendPayoutInternal(payoutId) {
 
       const batchId = resp?.batch_header?.payout_batch_id || null;
 
-      await payoutRef.set({
-        status: 'sent',
-        sentAt: admin.firestore.FieldValue.serverTimestamp(),
-        providerPayoutRef: batchId,
-        providerResponse: { type: 'paypal_payout', raw: resp },
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      }, { merge: true });
+      await payoutRef.set(
+        {
+          status: 'sent',
+          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+          providerPayoutRef: batchId,
+          providerResponse: { type: 'paypal_payout', raw: resp },
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
 
       await markReferencePaidOutOrSent(p);
 
@@ -543,12 +566,15 @@ async function sendPayoutInternal(payoutId) {
   } catch (e) {
     console.error('sendPayoutInternal error', e);
 
-    await payoutRef.set({
-      status: 'queued',
-      lastError: String(e?.message || e),
-      lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    await payoutRef.set(
+      {
+        status: 'queued',
+        lastError: String(e?.message || e),
+        lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
 
     throw e;
   }
@@ -558,34 +584,36 @@ async function markReferencePaidOutOrSent(p) {
   if (p.context === 'mediaMarket') {
     if (!p.purchaseId) return;
 
-    await db.collection('purchases').doc(p.purchaseId).set({
-      payoutStatus: 'sent',
-      payoutSentAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    await db.collection('purchases').doc(p.purchaseId).set(
+      {
+        payoutStatus: 'sent',
+        payoutSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
 
     return;
   }
 
-
   if (p.contractId) {
     const paidOutAt = admin.firestore.FieldValue.serverTimestamp();
     const disputeDeadline = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
     );
     const downloadDeadline = admin.firestore.Timestamp.fromDate(
-      new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+      new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
     );
 
-    await db.collection('contracts').doc(p.contractId).set({
-      status: 'paidOut',
-      paidOutAt,
-      disputeDeadline,
-      downloadDeadline,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    }, { merge: true });
+    await db.collection('contracts').doc(p.contractId).set(
+      {
+        status: 'paidOut',
+        paidOutAt,
+        disputeDeadline,
+        downloadDeadline,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
   }
 }
-
-
-

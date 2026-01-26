@@ -200,4 +200,45 @@ class TeamController extends GetxController {
   void viewProfile(TeamModel member) {
     Get.toNamed('/profile/${member.name.replaceAll(' ', '_')}');
   }
+
+  // داخل TeamController
+  Future<int> getAcceptedProjectsCount(String userId) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('proposals')
+          .where('userId', isEqualTo: userId)
+          .where(
+            'status',
+            isEqualTo: 'accepted',
+          ) // تأكدي من مسمى الحالة عندك (approved/accepted)
+          .get();
+
+      return snapshot.docs.length;
+    } catch (e) {
+      print('Error fetching accepted projects: $e');
+      return 0;
+    }
+  }
+
+  Future<int> getUniqueClientsCount(String freelancerId) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('contracts') // تأكدي أن هذا هو اسم الكوليكشن الصحيح
+          .where('freelancerId', isEqualTo: freelancerId)
+          // نفلتر فقط العقود التي تم دفعها فعلياً (تجنباً لحساب الإلغاءات)
+          // يمكنك استخدام status == "active" أو التأكد أن paidAmount > 0
+          .where('paidAmount', isGreaterThan: 0)
+          .get();
+
+      // استخراج معرفات العملاء بدون تكرار
+      final clientIds = snapshot.docs
+          .map((doc) => doc.data()['clientId'] as String)
+          .toSet();
+
+      return clientIds.length;
+    } catch (e) {
+      debugPrint('Error calculating unique clients: $e');
+      return 0;
+    }
+  }
 }

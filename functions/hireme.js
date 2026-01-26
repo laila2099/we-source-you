@@ -12,7 +12,8 @@ function assertString(v, name) {
   if (!v || typeof v !== 'string') throw new HttpsError('invalid-argument', `${name} is required`);
 }
 function assertOneOf(v, name, allowed) {
-  if (!allowed.includes(v)) throw new HttpsError('invalid-argument', `${name} must be one of: ${allowed.join(', ')}`);
+  if (!allowed.includes(v))
+    throw new HttpsError('invalid-argument', `${name} must be one of: ${allowed.join(', ')}`);
 }
 
 /**
@@ -41,23 +42,24 @@ exports.createHireMeContract = onCall({ cors: true, invoker: 'public' }, async (
 
   const currency = (u.currency || 'EUR').toString();
 
-  let rate = null;          // hourly/daily
+  let rate = null; // hourly/daily
   let kickoffAmount = null; // project
   let initialAmount = null;
 
   if (pricingType === 'hourly') {
     rate = Number(rates.hourlyRate);
-    if (!Number.isFinite(rate) || rate <= 0)
-    {
-     console.log('DEBUG freelancer doc id:', freelancerId);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      console.log('DEBUG freelancer doc id:', freelancerId);
       console.log('DEBUG freelancer data keys:', Object.keys(u || {}));
       console.log('DEBUG freelancer hourlyRate raw:', u.hourlyRate);
       console.log('DEBUG freelancer hireMeRates:', u.hireMeRates);
-    throw new HttpsError('failed-precondition', 'Missing/invalid hourlyRate');}
+      throw new HttpsError('failed-precondition', 'Missing/invalid hourlyRate');
+    }
     initialAmount = +(rate * 1).toFixed(2);
   } else if (pricingType === 'daily') {
     rate = Number(rates.dailyRate);
-    if (!Number.isFinite(rate) || rate <= 0) throw new HttpsError('failed-precondition', 'Missing/invalid dailyRate');
+    if (!Number.isFinite(rate) || rate <= 0)
+      throw new HttpsError('failed-precondition', 'Missing/invalid dailyRate');
     initialAmount = +(rate * 1).toFixed(2);
   } else {
     kickoffAmount = Number(rates.projectRate);
@@ -84,8 +86,8 @@ exports.createHireMeContract = onCall({ cors: true, invoker: 'public' }, async (
     kickoffAmount: kickoffAmount ?? null,
 
     // prepaid: first payment is REAL
-    prepaidUnits: (pricingType === 'project') ? null : 1,
-    prepaidAmount: (pricingType === 'project') ? initialAmount : null,
+    prepaidUnits: pricingType === 'project' ? null : 1,
+    prepaidAmount: pricingType === 'project' ? initialAmount : null,
 
     // amounts
     initialAmount,
@@ -94,8 +96,8 @@ exports.createHireMeContract = onCall({ cors: true, invoker: 'public' }, async (
 
     // agreement
     agreement: {
-      status: 'none',     // none | offered | accepted | cancelled
-      quantity: null,     // hours/days (integer)
+      status: 'none', // none | offered | accepted | cancelled
+      quantity: null, // hours/days (integer)
       notes: null,
       offeredAt: null,
       offeredBy: null,
@@ -130,143 +132,144 @@ exports.createHireMeContract = onCall({ cors: true, invoker: 'public' }, async (
  * 2) freelancer sends offer inside chat
  * Allowed only after chatUnlocked
  */
-exports.sendHireOfferByConversation = onCall(
-  { cors: true, invoker: 'public' },
-  async (request) => {
-    const uid = requireAuth(request);
-    const { conversationId, quantity, totalAmount, notes } = request.data || {};
-    assertString(conversationId, 'conversationId');
-
-    const cleanNotes =
-      typeof notes === 'string' && notes.trim() ? notes.trim() : null;
-
-    await db.runTransaction(async (tx) => {
-      const convRef = db.collection('conversations').doc(conversationId);
-      const convSnap = await tx.get(convRef);
-      if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
-
-      const conv = convSnap.data() || {};
-      const contractId = conv.contractId;
-      if (!contractId) throw new HttpsError('failed-precondition', 'Conversation missing contractId');
-
-      const contractRef = db.collection('contracts').doc(contractId);
-      const cSnap = await tx.get(contractRef);
-      if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
-
-      const c = cSnap.data() || {};
-      if (c.type !== 'hireMe') throw new HttpsError('failed-precondition', 'Not a hireMe contract');
-      if (c.freelancerId !== uid) throw new HttpsError('permission-denied', 'Only freelancer can send offer');
-      if (c.status !== 'chatUnlocked') throw new HttpsError('failed-precondition', `Not ready. status=${c.status}`);
-
-      // build agreement + message
-      const agreementPatch = {
-        ...(c.agreement || {}),
-        status: 'offered',
-        notes: cleanNotes,
-        offeredAt: admin.firestore.FieldValue.serverTimestamp(),
-        offeredBy: uid,
-      };
-
-      const meta = {
-        pricingType: c.pricingType,
-        notes: cleanNotes,
-      };
-
-      let text = '';
-
-      if (c.pricingType === 'project') {
-        const total = Number(totalAmount);
-        if (!Number.isFinite(total) || total <= 0) {
-          throw new HttpsError('invalid-argument', 'totalAmount must be a positive number');
-        }
-
-        agreementPatch.totalAmount = total;
-
-        text = `📝 Project Offer: ${total} ${c.currency}`;
-        meta.totalAmount = total;
-        meta.currency = c.currency ?? null;
-      } else {
-        const qty = Number(quantity);
-        if (!Number.isInteger(qty) || qty <= 0) {
-          throw new HttpsError('invalid-argument', 'quantity must be positive integer');
-        }
-
-        agreementPatch.quantity = qty;
-
-        const unitWord = c.pricingType === 'daily' ? 'days' : 'hours';
-        text = `📝 Offer: ${qty} ${unitWord} @ ${c.rate} ${c.currency}`;
-
-        meta.quantity = qty;
-        meta.rate = c.rate ?? null;
-        meta.currency = c.currency ?? null;
-      }
-
-      // single contract update (مرة واحدة فقط)
-      tx.update(contractRef, {
-        agreement: agreementPatch,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      // message
-      const msgRef = convRef.collection('messages').doc();
-      tx.set(msgRef, {
-        type: 'offer',
-        senderId: uid,
-        text,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        meta,
-      });
-
-      // conversation lastMessage + unread
-      const participants = Array.isArray(conv.participants) ? conv.participants : [];
-      const otherUid = participants.find((p) => p !== uid) || null;
-      const unread = (conv.unread && typeof conv.unread === 'object') ? conv.unread : {};
-      const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
-
-      const patch = {
-        lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-        lastMessageText: text,
-        lastMessageSenderId: uid,
-        [`unread.${uid}`]: 0,
-      };
-      if (otherUid) patch[`unread.${otherUid}`] = otherUnread + 1;
-
-      tx.set(convRef, patch, { merge: true });
-    });
-
-    return { ok: true };
-  }
-);
-
-
-/**
- * 3) client accepts offer => locks remainingDue and flips to paymentPendingRemaining
- * NO MONEY taken here. UI will start checkout after getting contractId.
- */
-exports.acceptHireOfferPrepareRemainingPayment = onCall({ cors: true, invoker: 'public' }, async (request) => {
+exports.sendHireOfferByConversation = onCall({ cors: true, invoker: 'public' }, async (request) => {
   const uid = requireAuth(request);
-  const { conversationId } = request.data || {};
+  const { conversationId, quantity, totalAmount, notes } = request.data || {};
   assertString(conversationId, 'conversationId');
 
-  const out = await db.runTransaction(async (tx) => {
+  const cleanNotes = typeof notes === 'string' && notes.trim() ? notes.trim() : null;
+
+  await db.runTransaction(async (tx) => {
     const convRef = db.collection('conversations').doc(conversationId);
     const convSnap = await tx.get(convRef);
     if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
-    const conv = convSnap.data() || {};
 
+    const conv = convSnap.data() || {};
     const contractId = conv.contractId;
     if (!contractId) throw new HttpsError('failed-precondition', 'Conversation missing contractId');
 
     const contractRef = db.collection('contracts').doc(contractId);
     const cSnap = await tx.get(contractRef);
     if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
-    const c = cSnap.data();
 
+    const c = cSnap.data() || {};
     if (c.type !== 'hireMe') throw new HttpsError('failed-precondition', 'Not a hireMe contract');
-    if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can accept');
-    if (c.status !== 'chatUnlocked') throw new HttpsError('failed-precondition', `Not in chatUnlocked. status=${c.status}`);
-    if ((c.agreement?.status || 'none') !== 'offered') throw new HttpsError('failed-precondition', 'No offered agreement');
+    if (c.freelancerId !== uid)
+      throw new HttpsError('permission-denied', 'Only freelancer can send offer');
+    if (c.status !== 'chatUnlocked')
+      throw new HttpsError('failed-precondition', `Not ready. status=${c.status}`);
 
+    // build agreement + message
+    const agreementPatch = {
+      ...(c.agreement || {}),
+      status: 'offered',
+      notes: cleanNotes,
+      offeredAt: admin.firestore.FieldValue.serverTimestamp(),
+      offeredBy: uid,
+    };
+
+    const meta = {
+      pricingType: c.pricingType,
+      notes: cleanNotes,
+    };
+
+    let text = '';
+
+    if (c.pricingType === 'project') {
+      const total = Number(totalAmount);
+      if (!Number.isFinite(total) || total <= 0) {
+        throw new HttpsError('invalid-argument', 'totalAmount must be a positive number');
+      }
+
+      agreementPatch.totalAmount = total;
+
+      text = `📝 Project Offer: ${total} ${c.currency}`;
+      meta.totalAmount = total;
+      meta.currency = c.currency ?? null;
+    } else {
+      const qty = Number(quantity);
+      if (!Number.isInteger(qty) || qty <= 0) {
+        throw new HttpsError('invalid-argument', 'quantity must be positive integer');
+      }
+
+      agreementPatch.quantity = qty;
+
+      const unitWord = c.pricingType === 'daily' ? 'days' : 'hours';
+      text = `📝 Offer: ${qty} ${unitWord} @ ${c.rate} ${c.currency}`;
+
+      meta.quantity = qty;
+      meta.rate = c.rate ?? null;
+      meta.currency = c.currency ?? null;
+    }
+
+    // single contract update (مرة واحدة فقط)
+    tx.update(contractRef, {
+      agreement: agreementPatch,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // message
+    const msgRef = convRef.collection('messages').doc();
+    tx.set(msgRef, {
+      type: 'offer',
+      senderId: uid,
+      text,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      meta,
+    });
+
+    // conversation lastMessage + unread
+    const participants = Array.isArray(conv.participants) ? conv.participants : [];
+    const otherUid = participants.find((p) => p !== uid) || null;
+    const unread = conv.unread && typeof conv.unread === 'object' ? conv.unread : {};
+    const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
+
+    const patch = {
+      lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastMessageText: text,
+      lastMessageSenderId: uid,
+      [`unread.${uid}`]: 0,
+    };
+    if (otherUid) patch[`unread.${otherUid}`] = otherUnread + 1;
+
+    tx.set(convRef, patch, { merge: true });
+  });
+
+  return { ok: true };
+});
+
+/**
+ * 3) client accepts offer => locks remainingDue and flips to paymentPendingRemaining
+ * NO MONEY taken here. UI will start checkout after getting contractId.
+ */
+exports.acceptHireOfferPrepareRemainingPayment = onCall(
+  { cors: true, invoker: 'public' },
+  async (request) => {
+    const uid = requireAuth(request);
+    const { conversationId } = request.data || {};
+    assertString(conversationId, 'conversationId');
+
+    const out = await db.runTransaction(async (tx) => {
+      const convRef = db.collection('conversations').doc(conversationId);
+      const convSnap = await tx.get(convRef);
+      if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
+      const conv = convSnap.data() || {};
+
+      const contractId = conv.contractId;
+      if (!contractId)
+        throw new HttpsError('failed-precondition', 'Conversation missing contractId');
+
+      const contractRef = db.collection('contracts').doc(contractId);
+      const cSnap = await tx.get(contractRef);
+      if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
+      const c = cSnap.data();
+
+      if (c.type !== 'hireMe') throw new HttpsError('failed-precondition', 'Not a hireMe contract');
+      if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can accept');
+      if (c.status !== 'chatUnlocked')
+        throw new HttpsError('failed-precondition', `Not in chatUnlocked. status=${c.status}`);
+      if ((c.agreement?.status || 'none') !== 'offered')
+        throw new HttpsError('failed-precondition', 'No offered agreement');
 
       // ---------- compute remaining due ----------
       let remainingDue = 0;
@@ -287,7 +290,7 @@ exports.acceptHireOfferPrepareRemainingPayment = onCall({ cors: true, invoker: '
         const alreadyPaid = Number(c.paidAmount ?? 0);
         const prepaid = Number.isFinite(alreadyPaid) ? alreadyPaid : 0;
 
-        remainingDue = +(Math.max(0, total - prepaid).toFixed(2));
+        remainingDue = +Math.max(0, total - prepaid).toFixed(2);
         totalGross = +total.toFixed(2);
 
         meta.totalAmount = totalGross;
@@ -355,7 +358,7 @@ exports.acceptHireOfferPrepareRemainingPayment = onCall({ cors: true, invoker: '
       // ---------- conversation lastMessage + unread ----------
       const participants = Array.isArray(conv.participants) ? conv.participants : [];
       const otherUid = participants.find((p) => p !== uid) || null;
-      const unread = (conv.unread && typeof conv.unread === 'object') ? conv.unread : {};
+      const unread = conv.unread && typeof conv.unread === 'object' ? conv.unread : {};
       const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
 
       const msgText = `✅ Offer accepted. Remaining due: ${remainingDue}`;
@@ -383,157 +386,167 @@ exports.acceptHireOfferPrepareRemainingPayment = onCall({ cors: true, invoker: '
     });
 
     return { ok: true, ...out };
-  }
+  },
 );
 
 /**
  * 4) client says: no agreement
  * Policy A: first payment is consultation => no refund, close conversation.
  */
-exports.cancelHireNoAgreementByConversation = onCall({ cors: true, invoker: 'public' }, async (request) => {
-  const uid = requireAuth(request);
-  const { conversationId } = request.data || {};
-  assertString(conversationId, 'conversationId');
+exports.cancelHireNoAgreementByConversation = onCall(
+  { cors: true, invoker: 'public' },
+  async (request) => {
+    const uid = requireAuth(request);
+    const { conversationId } = request.data || {};
+    assertString(conversationId, 'conversationId');
 
-  await db.runTransaction(async (tx) => {
-    const convRef = db.collection('conversations').doc(conversationId);
-    const convSnap = await tx.get(convRef);
-    if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
-    const conv = convSnap.data() || {};
+    await db.runTransaction(async (tx) => {
+      const convRef = db.collection('conversations').doc(conversationId);
+      const convSnap = await tx.get(convRef);
+      if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
+      const conv = convSnap.data() || {};
 
-    const contractId = conv.contractId;
-    if (!contractId) throw new HttpsError('failed-precondition', 'Conversation missing contractId');
+      const contractId = conv.contractId;
+      if (!contractId)
+        throw new HttpsError('failed-precondition', 'Conversation missing contractId');
 
-    const contractRef = db.collection('contracts').doc(contractId);
-    const cSnap = await tx.get(contractRef);
-    if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
-    const c = cSnap.data();
+      const contractRef = db.collection('contracts').doc(contractId);
+      const cSnap = await tx.get(contractRef);
+      if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
+      const c = cSnap.data();
 
-    if (c.type !== 'hireMe') throw new HttpsError('failed-precondition', 'Not a hireMe contract');
-    if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can cancel');
-    if (c.status !== 'chatUnlocked') throw new HttpsError('failed-precondition', `Cannot cancel now. status=${c.status}`);
-    if ((c.agreement?.status || 'none') === 'accepted') throw new HttpsError('failed-precondition', 'Already accepted');
+      if (c.type !== 'hireMe') throw new HttpsError('failed-precondition', 'Not a hireMe contract');
+      if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can cancel');
+      if (c.status !== 'chatUnlocked')
+        throw new HttpsError('failed-precondition', `Cannot cancel now. status=${c.status}`);
+      if ((c.agreement?.status || 'none') === 'accepted')
+        throw new HttpsError('failed-precondition', 'Already accepted');
 
-    tx.update(contractRef, {
-      status: 'cancelledNoAgreement',
-      hireStage: 'chatUnlocked',
-      agreement: { ...(c.agreement || {}), status: 'cancelled' },
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      tx.update(contractRef, {
+        status: 'cancelledNoAgreement',
+        hireStage: 'chatUnlocked',
+        agreement: { ...(c.agreement || {}), status: 'cancelled' },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      tx.set(
+        convRef,
+        { status: 'closed', closedAt: admin.firestore.FieldValue.serverTimestamp() },
+        { merge: true },
+      );
+      // update conversation lastMessage + unread
+      const participants = Array.isArray(conv.participants) ? conv.participants : [];
+      const otherUid = participants.find((p) => p !== uid) || null;
+      const unread = conv.unread && typeof conv.unread === 'object' ? conv.unread : {};
+      const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
+
+      const patch = {
+        lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastMessageText:
+          '❌ No agreement. Contract closed. First payment is treated as consultation and is non-refundable.',
+        lastMessageSenderId: uid,
+        [`unread.${uid}`]: 0,
+      };
+      if (otherUid) patch[`unread.${otherUid}`] = otherUnread + 1;
+      tx.set(convRef, patch, { merge: true });
+
+      const msgRef = convRef.collection('messages').doc();
+      tx.set(msgRef, {
+        type: 'system',
+        senderId: uid,
+        text: '❌ No agreement. Contract closed. First payment is treated as consultation and is non-refundable.',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     });
 
-    tx.set(convRef, { status: 'closed', closedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-// update conversation lastMessage + unread
-    const participants = Array.isArray(conv.participants) ? conv.participants : [];
-    const otherUid = participants.find((p) => p !== uid) || null;
-    const unread = (conv.unread && typeof conv.unread === 'object') ? conv.unread : {};
-    const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
+    return { ok: true };
+  },
+);
 
-    const patch = {
-      lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-      lastMessageText: '❌ No agreement. Contract closed. First payment is treated as consultation and is non-refundable.',
-      lastMessageSenderId: uid,
-      [`unread.${uid}`]: 0,
-    };
-    if (otherUid) patch[`unread.${otherUid}`] = otherUnread + 1;
-    tx.set(convRef, patch, { merge: true });
+exports.rejectHireOfferByConversation = onCall(
+  { cors: true, invoker: 'public' },
+  async (request) => {
+    const uid = requireAuth(request);
 
-    const msgRef = convRef.collection('messages').doc();
-    tx.set(msgRef, {
-      type: 'system',
-      senderId: uid,
-      text: '❌ No agreement. Contract closed. First payment is treated as consultation and is non-refundable.',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    const { conversationId, reason } = request.data || {};
+    assertString(conversationId, 'conversationId');
+
+    const reasonText =
+      typeof reason === 'string' && reason.trim() ? reason.trim() : 'Offer rejected';
+
+    await db.runTransaction(async (tx) => {
+      const convRef = db.collection('conversations').doc(conversationId);
+      const convSnap = await tx.get(convRef);
+      if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
+      const conv = convSnap.data() || {};
+
+      const contractId = conv.contractId;
+      if (!contractId)
+        throw new HttpsError('failed-precondition', 'Conversation missing contractId');
+
+      const contractRef = db.collection('contracts').doc(contractId);
+      const cSnap = await tx.get(contractRef);
+      if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
+      const c = cSnap.data() || {};
+
+      if (c.type !== 'hireMe') throw new HttpsError('failed-precondition', 'Not a hireMe contract');
+      if (c.clientId !== uid)
+        throw new HttpsError('permission-denied', 'Only client can reject offer');
+
+      if (c.status !== 'chatUnlocked') {
+        throw new HttpsError('failed-precondition', `Cannot reject now. status=${c.status}`);
+      }
+
+      const aStatus = c.agreement && c.agreement.status ? c.agreement.status : 'none';
+      if (aStatus !== 'offered') {
+        throw new HttpsError('failed-precondition', 'No offered agreement to reject');
+      }
+
+      tx.update(contractRef, {
+        agreement: {
+          ...(c.agreement || {}),
+          status: 'none',
+          quantity: null,
+          notes: null,
+          offeredAt: null,
+          offeredBy: null,
+          acceptedAt: null,
+          acceptedBy: null,
+          rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
+          rejectedBy: uid,
+          rejectReason: reasonText,
+        },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // رسالة system بالشات
+      const msgRef = convRef.collection('messages').doc();
+      const text = '❌ Offer rejected. Freelancer can send a new offer.';
+      tx.set(msgRef, {
+        type: 'system',
+        senderId: uid,
+        text: text + '\nReason: ' + reasonText,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        meta: { action: 'rejectOffer', reason: reasonText },
+      });
+
+      // تحديث lastMessage + unread (بنفس طريقتك)
+      const participants = Array.isArray(conv.participants) ? conv.participants : [];
+      const otherUid = participants.find((p) => p !== uid) || null;
+      const unread = conv.unread && typeof conv.unread === 'object' ? conv.unread : {};
+      const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
+
+      const patch = {
+        lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastMessageText: `${text} Reason: ${reasonText}`,
+        lastMessageSenderId: uid,
+        [`unread.${uid}`]: 0,
+      };
+      if (otherUid) patch[`unread.${otherUid}`] = otherUnread + 1;
+
+      tx.set(convRef, patch, { merge: true });
     });
 
-
-  });
-
-  return { ok: true };
-});
-
-
-exports.rejectHireOfferByConversation = onCall({ cors: true, invoker: 'public' }, async (request) => {
-  const uid = requireAuth(request);
-
-  const { conversationId, reason } = request.data || {};
-  assertString(conversationId, 'conversationId');
-
-  const reasonText = (typeof reason === 'string' && reason.trim())
-      ? reason.trim()
-      : 'Offer rejected';
-
-  await db.runTransaction(async (tx) => {
-    const convRef = db.collection('conversations').doc(conversationId);
-    const convSnap = await tx.get(convRef);
-    if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
-    const conv = convSnap.data() || {};
-
-    const contractId = conv.contractId;
-    if (!contractId) throw new HttpsError('failed-precondition', 'Conversation missing contractId');
-
-    const contractRef = db.collection('contracts').doc(contractId);
-    const cSnap = await tx.get(contractRef);
-    if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
-    const c = cSnap.data() || {};
-
-    if (c.type !== 'hireMe') throw new HttpsError('failed-precondition', 'Not a hireMe contract');
-    if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can reject offer');
-
-    if (c.status !== 'chatUnlocked') {
-      throw new HttpsError('failed-precondition', `Cannot reject now. status=${c.status}`);
-    }
-
-    const aStatus = (c.agreement && c.agreement.status) ? c.agreement.status : 'none';
-    if (aStatus !== 'offered') {
-      throw new HttpsError('failed-precondition', 'No offered agreement to reject');
-    }
-
-
-    tx.update(contractRef, {
-      agreement: {
-        ...(c.agreement || {}),
-        status: 'none',
-        quantity: null,
-        notes: null,
-        offeredAt: null,
-        offeredBy: null,
-        acceptedAt: null,
-        acceptedBy: null,
-        rejectedAt: admin.firestore.FieldValue.serverTimestamp(),
-        rejectedBy: uid,
-        rejectReason: reasonText,
-      },
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    // رسالة system بالشات
-    const msgRef = convRef.collection('messages').doc();
-    const text = '❌ Offer rejected. Freelancer can send a new offer.';
-    tx.set(msgRef, {
-      type: 'system',
-      senderId: uid,
-      text: text+'\nReason: '+reasonText,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      meta: { action: 'rejectOffer', reason: reasonText },
-    });
-
-    // تحديث lastMessage + unread (بنفس طريقتك)
-    const participants = Array.isArray(conv.participants) ? conv.participants : [];
-    const otherUid = participants.find((p) => p !== uid) || null;
-    const unread = (conv.unread && typeof conv.unread === 'object') ? conv.unread : {};
-    const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
-
-    const patch = {
-      lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-      lastMessageText: `${text} Reason: ${reasonText}`,
-      lastMessageSenderId: uid,
-      [`unread.${uid}`]: 0,
-    };
-    if (otherUid) patch[`unread.${otherUid}`] = otherUnread + 1;
-
-    tx.set(convRef, patch, { merge: true });
-  });
-
-  return { ok: true };
-});
-
+    return { ok: true };
+  },
+);

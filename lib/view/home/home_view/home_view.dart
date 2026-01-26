@@ -21,10 +21,7 @@ class HomeView extends StatelessWidget {
   final HomeController controller = Get.find<HomeController>();
   final AuthController authController = Get.find<AuthController>();
   final TeamController jourController = Get.find<TeamController>();
-  final JobsController jobsController = Get.put<JobsController>(
-    JobsController(),
-    permanent: false,
-  );
+  final JobsController jobsController = Get.find<JobsController>();
 
   @override
   Widget build(BuildContext context) {

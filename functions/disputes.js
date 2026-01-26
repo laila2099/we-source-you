@@ -30,7 +30,7 @@ exports.submitDisputeMessageByConversation = onCall(
     const { conversationId, text, attachments } = request.data || {};
     assertString(conversationId, 'conversationId');
 
-    const msgText = (typeof text === 'string') ? text.trim() : '';
+    const msgText = typeof text === 'string' ? text.trim() : '';
     const files = Array.isArray(attachments) ? attachments : [];
 
     if (!msgText && files.length === 0) {
@@ -66,7 +66,10 @@ exports.submitDisputeMessageByConversation = onCall(
 
       const status = (conv.status || 'open').toString();
       if (status !== 'disputeOpen') {
-        throw new HttpsError('failed-precondition', `Conversation not in dispute_open. status=${status}`);
+        throw new HttpsError(
+          'failed-precondition',
+          `Conversation not in dispute_open. status=${status}`,
+        );
       }
 
       // ✅ security: attachments must belong to this conversation folder
@@ -74,7 +77,10 @@ exports.submitDisputeMessageByConversation = onCall(
       for (const a of files) {
         const ref = a.fileRef.trim();
         if (!ref.startsWith(`disputes/${conversationId}/`)) {
-          throw new HttpsError('permission-denied', 'attachment fileRef not allowed for this conversation');
+          throw new HttpsError(
+            'permission-denied',
+            'attachment fileRef not allowed for this conversation',
+          );
         }
       }
 
@@ -96,12 +102,15 @@ exports.submitDisputeMessageByConversation = onCall(
 
       // unread update
       const otherUid = participants.find((p) => p !== uid) || null;
-      const unread = (conv.unread && typeof conv.unread === 'object') ? conv.unread : {};
+      const unread = conv.unread && typeof conv.unread === 'object' ? conv.unread : {};
       const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
 
-      const lastText = files.length > 0
-        ? '📎 Dispute evidence'
-        : (msgText ? '⚠️ Dispute message' : '⚠️ Dispute update');
+      const lastText =
+        files.length > 0
+          ? '📎 Dispute evidence'
+          : msgText
+            ? '⚠️ Dispute message'
+            : '⚠️ Dispute update';
 
       const patch = {
         lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -116,9 +125,8 @@ exports.submitDisputeMessageByConversation = onCall(
     });
 
     return { ok: true };
-  }
+  },
 );
-
 
 // ✅ signed url for dispute attachment (download)
 exports.getDisputeAttachmentUrlByConversation = onCall(
@@ -150,9 +158,7 @@ exports.getDisputeAttachmentUrlByConversation = onCall(
       throw new HttpsError('permission-denied', 'fileRef not allowed');
     }
 
-    const safeName = (typeof filename === 'string' && filename.trim())
-      ? filename.trim()
-      : 'evidence';
+    const safeName = typeof filename === 'string' && filename.trim() ? filename.trim() : 'evidence';
 
     const [url] = await bucket.file(fileRef).getSignedUrl({
       version: 'v4',
@@ -162,5 +168,5 @@ exports.getDisputeAttachmentUrlByConversation = onCall(
     });
 
     return { url };
-  }
+  },
 );

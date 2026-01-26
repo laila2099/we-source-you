@@ -29,22 +29,20 @@ exports.setPayoutProfilePayPal = onCall({ cors: true, invoker: 'public' }, async
     {
       payoutDefault: 'paypal',
       payoutProfile: {
-              paypal: {
-                enabled: true,
-                provider: 'paypal',
-                paypalEmail: clean,
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              },
-            },
+        paypal: {
+          enabled: true,
+          provider: 'paypal',
+          paypalEmail: clean,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+      },
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 
   return { ok: true };
 });
-
-
 
 const Stripe = require('stripe');
 
@@ -64,7 +62,7 @@ exports.createStripeAccountLink = onCall({ cors: true, invoker: 'public' }, asyn
   const userRef = db.collection('users').doc(uid);
 
   const userSnap = await userRef.get();
-  const u = userSnap.exists ? (userSnap.data() || {}) : {};
+  const u = userSnap.exists ? userSnap.data() || {} : {};
   const payoutProfile = u.payoutProfile || {};
   const stripeProfile = payoutProfile.stripe || {};
   let accountId = stripeProfile.stripeConnectAccountId || null;
@@ -81,16 +79,16 @@ exports.createStripeAccountLink = onCall({ cors: true, invoker: 'public' }, asyn
       {
         payoutDefault: 'stripe',
         payoutProfile: {
-                      stripe: {
-                        enabled: true,
-                        provider: 'stripe',
-                        stripeConnectAccountId: accountId,
-                        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-                      },
-                    },
+          stripe: {
+            enabled: true,
+            provider: 'stripe',
+            stripeConnectAccountId: accountId,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+        },
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
   } else {
     // ensure it's enabled + set default
@@ -100,7 +98,7 @@ exports.createStripeAccountLink = onCall({ cors: true, invoker: 'public' }, asyn
         [`payoutProfile.stripe.enabled`]: true,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
   }
 

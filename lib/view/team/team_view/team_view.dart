@@ -38,32 +38,35 @@ class _TeamViewState extends State<TeamView> {
           icon: const Icon(Icons.arrow_back),
         ),
         title: const Text("Team Board"),
-        backgroundColor: AppColors.cream,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        // foregroundColor: Colors.black,
       ),
 
       // Mobile drawer
       body: Column(
         children: [
-          SearchBarWithFilter(
-            hintText: "Search for team members...",
-            onSearchChanged: (value) {
-              controller.updateSearchQuery(value);
-            },
-            onFilterTap: () {
-              // Show TeamFilterSidebar as dialog
-              Get.dialog(
-                Dialog(
-                  insetPadding: const EdgeInsets.all(24),
-                  child: SizedBox(
-                    width: 320,
-                    child: SingleChildScrollView(child: TeamFilterSidebar()),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SearchBarWithFilter(
+              hintText: "Search for team members...",
+              onSearchChanged: (value) {
+                controller.updateSearchQuery(value);
+              },
+              onFilterTap: () {
+                // Show TeamFilterSidebar as dialog
+                Get.dialog(
+                  Dialog(
+                    insetPadding: const EdgeInsets.all(24),
+                    child: SizedBox(
+                      width: 320,
+                      child: SingleChildScrollView(child: TeamFilterSidebar()),
+                    ),
                   ),
-                ),
-              );
-            },
-            maxWidth: 600,
-            showFilterButton: !isDesktop, // ✅ تظهر فقط على الموبايل
+                );
+              },
+              maxWidth: 600,
+              showFilterButton: !isDesktop, // ✅ تظهر فقط على الموبايل
+            ),
           ),
 
           const SizedBox(height: 16),

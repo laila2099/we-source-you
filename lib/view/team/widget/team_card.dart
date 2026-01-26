@@ -183,7 +183,7 @@ class TeamCard extends GetView<TeamController> {
             spacing: 8.0,
             runSpacing: 8.0,
             children: journalist.specialties
-                .map((tag) => _SpecialtyTag(tag: tag))
+                .map((tag) => SpecialtyTag(tag: tag))
                 .toList(),
           ),
           const SizedBox(height: 20),
@@ -194,9 +194,22 @@ class TeamCard extends GetView<TeamController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _StatColumn(count: journalist.projects, label: 'Projects'),
-              _StatColumn(count: journalist.clients, label: 'Clients'),
-              _StatColumn(count: journalist.years, label: 'Years'),
+              // تعديل قسم البروجيكت ليجلب البيانات الحقيقية
+              FutureBuilder<int>(
+                future: controller.getAcceptedProjectsCount(journalist.id),
+                builder: (context, snapshot) {
+                  final count = snapshot.data?.toString() ?? '...';
+                  return _StatColumn(count: count, label: 'Projects');
+                },
+              ),
+              FutureBuilder<int>(
+                future: controller.getUniqueClientsCount(journalist.id),
+                builder: (context, snapshot) {
+                  // إذا كان لسه عم يحمل بنعرض "..." أو "0"
+                  final count = snapshot.data?.toString() ?? '0';
+                  return _StatColumn(count: count, label: 'Clients');
+                },
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -236,9 +249,9 @@ class TeamCard extends GetView<TeamController> {
   }
 }
 
-class _SpecialtyTag extends StatelessWidget {
+class SpecialtyTag extends StatelessWidget {
   final String tag;
-  const _SpecialtyTag({required this.tag});
+  const SpecialtyTag({required this.tag});
 
   @override
   Widget build(BuildContext context) {

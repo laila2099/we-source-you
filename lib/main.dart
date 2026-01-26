@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
           translations: TranslationService(),
-          locale: const Locale('en'),
+          locale: Get.locale ?? Get.deviceLocale,
           fallbackLocale: const Locale('en'),
           supportedLocales: const [Locale('en'), Locale('ar')],
           localizationsDelegates: const [
@@ -70,7 +70,7 @@ class MyApp extends StatelessWidget {
           initialRoute: AppRoutes.home,
           initialBinding: AppBinding(),
           getPages: appPages,
-          key: UniqueKey(),
+          // key: UniqueKey(),
         );
       },
     );

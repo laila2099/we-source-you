@@ -29,20 +29,19 @@ function tsPlusDays(days) {
 }
 
 function resolvePayoutFromUser(u) {
-  const profiles = (u.payoutProfile && typeof u.payoutProfile === 'object')
-    ? u.payoutProfile
-    : {};
+  const profiles = u.payoutProfile && typeof u.payoutProfile === 'object' ? u.payoutProfile : {};
 
   const def = (u.payoutDefault || '').toString();
 
   // ترتيب fallback منطقي: default -> أي متاح
-  const provider = (def === 'paypal' || def === 'stripe')
-    ? def
-    : (profiles.paypal?.enabled && profiles.paypal?.paypalEmail)
+  const provider =
+    def === 'paypal' || def === 'stripe'
+      ? def
+      : profiles.paypal?.enabled && profiles.paypal?.paypalEmail
         ? 'paypal'
-        : (profiles.stripe?.enabled && profiles.stripe?.stripeConnectAccountId)
-            ? 'stripe'
-            : null;
+        : profiles.stripe?.enabled && profiles.stripe?.stripeConnectAccountId
+          ? 'stripe'
+          : null;
 
   if (!provider) return { ok: false, reason: 'Payout setup required' };
 
@@ -68,7 +67,6 @@ function resolvePayoutFromUser(u) {
 
   return { ok: false, reason: 'Unsupported payout provider' };
 }
-
 
 async function getContractFromConversation(tx, conversationId) {
   const convRef = db.collection('conversations').doc(conversationId);
@@ -132,7 +130,6 @@ function finalizePayoutTx(tx, { contractRef, contractId, contract, convRef, payo
 
   const payoutRef = db.collection('payouts').doc();
 
-
   tx.set(payoutRef, {
     contractId,
     clientId: contract.clientId,
@@ -149,10 +146,10 @@ function finalizePayoutTx(tx, { contractRef, contractId, contract, convRef, payo
     freelancerNet: contract.freelancerNet ?? null,
 
     // ✅ NEW fields for payout sending
-    payoutProvider,      // 'stripe' | 'paypal'
-    destination,         // {stripeConnectAccountId} OR {paypalPayoutEmail}
+    payoutProvider, // 'stripe' | 'paypal'
+    destination, // {stripeConnectAccountId} OR {paypalPayoutEmail}
 
-    status: 'queued',    // بدل recorded
+    status: 'queued', // بدل recorded
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
@@ -164,7 +161,6 @@ function finalizePayoutTx(tx, { contractRef, contractId, contract, convRef, payo
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-
   // close conversation
   tx.set(
     convRef,
@@ -173,13 +169,11 @@ function finalizePayoutTx(tx, { contractRef, contractId, contract, convRef, payo
       closedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 
   return { already: false, payoutId: payoutRef.id };
 }
-
-
 
 /**
  * freelancer submit delivery
@@ -199,7 +193,7 @@ exports.submitDeliveryByConversation = onCall(
     if (!ALLOWED.includes(submissionType)) {
       throw new HttpsError(
         'invalid-argument',
-        `submissionType must be one of: ${ALLOWED.join(', ')}`
+        `submissionType must be one of: ${ALLOWED.join(', ')}`,
       );
     }
 
@@ -240,8 +234,8 @@ exports.submitDeliveryByConversation = onCall(
       const msgRef = convRef.collection('messages').doc();
 
       const convSnap = await tx.get(convRef);
-        if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
-        const conv = convSnap.data() || {};
+      if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
+      const conv = convSnap.data() || {};
 
       const { contractRef, contractSnap } = await getContractFromConversation(tx, conversationId);
       const c = contractSnap.data();
@@ -280,64 +274,65 @@ exports.submitDeliveryByConversation = onCall(
 
       // 3) update conversation last message + unread counts
       const participants = Array.isArray(conv.participants) ? conv.participants : [];
-        if (!participants.includes(uid)) {
-          throw new HttpsError('permission-denied', 'Not a participant');
-        }
+      if (!participants.includes(uid)) {
+        throw new HttpsError('permission-denied', 'Not a participant');
+      }
 
-        const otherUid = participants.find((p) => p !== uid) || null;
-        const unread = (conv.unread && typeof conv.unread === 'object') ? conv.unread : {};
-          const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
-
+      const otherUid = participants.find((p) => p !== uid) || null;
+      const unread = conv.unread && typeof conv.unread === 'object' ? conv.unread : {};
+      const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
 
       const patch = {
-          lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-          lastMessageText: '📦 Delivery submitted',
-          lastMessageSenderId: uid,
-          [`unread.${uid}`]: 0,
-        };
+        lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastMessageText: '📦 Delivery submitted',
+        lastMessageSenderId: uid,
+        [`unread.${uid}`]: 0,
+      };
 
-        if (otherUid) {
-          patch[`unread.${otherUid}`] = otherUnread + 1; // زيدي للطرف التاني
-        }
+      if (otherUid) {
+        patch[`unread.${otherUid}`] = otherUnread + 1; // زيدي للطرف التاني
+      }
 
-        tx.set(convRef, patch, { merge: true });
+      tx.set(convRef, patch, { merge: true });
     });
 
     return { ok: true };
-  }
+  },
 );
-
-
 
 /**
  * client approves delivery
  * submitted -> deliveryApproved
  */
-exports.approveDeliveryByConversation = onCall({ cors: true, invoker: 'public' }, async (request) => {
-  const uid = requireAuth(request);
+exports.approveDeliveryByConversation = onCall(
+  { cors: true, invoker: 'public' },
+  async (request) => {
+    const uid = requireAuth(request);
 
-  const { conversationId } = request.data || {};
-  assertString(conversationId, 'conversationId');
+    const { conversationId } = request.data || {};
+    assertString(conversationId, 'conversationId');
 
-  await db.runTransaction(async (tx) => {
-    const { contractRef, contractSnap } = await getContractFromConversation(tx, conversationId);
-    const c = contractSnap.data();
+    await db.runTransaction(async (tx) => {
+      const { contractRef, contractSnap } = await getContractFromConversation(tx, conversationId);
+      const c = contractSnap.data();
 
-    if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can approve');
-    if (c.status !== 'submitted') throw new HttpsError('failed-precondition', 'Not in submitted state');
+      if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can approve');
+      if (c.status !== 'submitted')
+        throw new HttpsError('failed-precondition', 'Not in submitted state');
 
-    tx.update(contractRef, {
-      status: 'deliveryApproved',
-      approvals: {
-        ...(c.approvals || {}),
-        clientApprovedAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      tx.update(contractRef, {
+        status: 'deliveryApproved',
+        approvals: {
+          ...(c.approvals || {}),
+          clientApprovedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     });
-  });
 
-  return { ok: true };
-});
+    return { ok: true };
+  },
+);
 
 /**
  * freelancer confirms close
@@ -349,8 +344,10 @@ exports.confirmCloseByConversation = onCall({ cors: true, invoker: 'public' }, a
   assertString(conversationId, 'conversationId');
 
   const out = await db.runTransaction(async (tx) => {
-    const { convRef, contractRef, contractSnap, contractId } =
-      await getContractFromConversation(tx, conversationId);
+    const { convRef, contractRef, contractSnap, contractId } = await getContractFromConversation(
+      tx,
+      conversationId,
+    );
 
     const c = contractSnap.data();
 
@@ -366,11 +363,9 @@ exports.confirmCloseByConversation = onCall({ cors: true, invoker: 'public' }, a
     // ============================
     const userRef = db.collection('users').doc(uid);
     const userSnap = await tx.get(userRef);
-    const u = userSnap.exists ? (userSnap.data() || {}) : {};
+    const u = userSnap.exists ? userSnap.data() || {} : {};
 
-    const profiles = (u.payoutProfile && typeof u.payoutProfile === 'object')
-      ? u.payoutProfile
-      : {};
+    const profiles = u.payoutProfile && typeof u.payoutProfile === 'object' ? u.payoutProfile : {};
 
     // default provider: payoutDefault -> legacy.provider
     const chosenProvider = (u.payoutDefault || '').toString();
@@ -379,17 +374,13 @@ exports.confirmCloseByConversation = onCall({ cors: true, invoker: 'public' }, a
     let payoutProfile = null;
 
     if (chosenProvider === 'paypal') {
-      const email =
-        profiles.paypal?.paypalEmail ||
-        null;
+      const email = profiles.paypal?.paypalEmail || null;
 
       if (!email) throw new HttpsError('failed-precondition', 'Payout setup required');
 
       payoutProfile = { provider: 'paypal', paypalEmail: email };
     } else if (chosenProvider === 'stripe') {
-      const acct =
-        profiles.stripe?.stripeConnectAccountId ||
-        null;
+      const acct = profiles.stripe?.stripeConnectAccountId || null;
 
       if (!acct) throw new HttpsError('failed-precondition', 'Payout setup required');
 
@@ -398,7 +389,6 @@ exports.confirmCloseByConversation = onCall({ cors: true, invoker: 'public' }, a
       // إذا ما في default ولا legacy
       throw new HttpsError('failed-precondition', 'Payout setup required');
     }
-
 
     // سجل موافقة الفريلانسر
     tx.update(contractRef, {
@@ -430,8 +420,6 @@ exports.confirmCloseByConversation = onCall({ cors: true, invoker: 'public' }, a
   return { ok: true, payoutId: out.payoutId, alreadyPaidOut: out.already };
 });
 
-
-
 /**
  * open dispute
  * - client can open when submitted or deliveryApproved
@@ -443,7 +431,10 @@ exports.openDisputeByConversation = onCall({ cors: true, invoker: 'public' }, as
   assertString(conversationId, 'conversationId');
 
   const disputeId = await db.runTransaction(async (tx) => {
-    const { convRef, contractRef, contractSnap, contractId } = await getContractFromConversation(tx, conversationId);
+    const { convRef, contractRef, contractSnap, contractId } = await getContractFromConversation(
+      tx,
+      conversationId,
+    );
     const c = contractSnap.data();
 
     const isClient = c.clientId === uid;
@@ -460,7 +451,10 @@ exports.openDisputeByConversation = onCall({ cors: true, invoker: 'public' }, as
 
     const allowed =
       (isClient && (c.status === 'submitted' || c.status === 'deliveryApproved')) ||
-      ((isClient || isFreelancer) && c.status === 'paidOut' && disputeDeadline && now <= disputeDeadline);
+      ((isClient || isFreelancer) &&
+        c.status === 'paidOut' &&
+        disputeDeadline &&
+        now <= disputeDeadline);
 
     if (!allowed) {
       throw new HttpsError('failed-precondition', `Cannot open dispute at status=${c.status}`);
@@ -473,7 +467,7 @@ exports.openDisputeByConversation = onCall({ cors: true, invoker: 'public' }, as
       conversationId,
       openedBy: uid,
       status: 'opened',
-      reason: (typeof reason === 'string' ? reason : null),
+      reason: typeof reason === 'string' ? reason : null,
       openedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -483,14 +477,17 @@ exports.openDisputeByConversation = onCall({ cors: true, invoker: 'public' }, as
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    tx.set(convRef, { status: 'disputeOpen', updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    tx.set(
+      convRef,
+      { status: 'disputeOpen', updatedAt: admin.firestore.FieldValue.serverTimestamp() },
+      { merge: true },
+    );
 
     return disputeRef.id;
   });
 
   return { ok: true, disputeId };
 });
-
 
 /**
  * releasePayout manual (optional)
@@ -502,7 +499,10 @@ exports.releasePayout = onCall({ cors: true, invoker: 'public' }, async (request
   assertString(conversationId, 'conversationId');
 
   const out = await db.runTransaction(async (tx) => {
-    const { convRef, contractRef, contractSnap, contractId } = await getContractFromConversation(tx, conversationId);
+    const { convRef, contractRef, contractSnap, contractId } = await getContractFromConversation(
+      tx,
+      conversationId,
+    );
     const c = contractSnap.data();
 
     const isParty = c.clientId === uid || c.freelancerId === uid;
@@ -513,9 +513,6 @@ exports.releasePayout = onCall({ cors: true, invoker: 'public' }, async (request
 
   return { ok: true, payoutId: out.payoutId, alreadyPaidOut: out.already };
 });
-
-
-
 
 // ========================
 // Scheduled auto rules
@@ -528,9 +525,12 @@ const AUTO_FREELANCER_CONFIRM_DAYS = 3;
  * submitted + no client action X days => auto approve delivery (clientApprovedAt)
  */
 exports.autoApproveSubmitted = onSchedule('every 60 minutes', async () => {
-  const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - AUTO_CLIENT_APPROVE_DAYS * DAY_MS);
+  const cutoff = admin.firestore.Timestamp.fromMillis(
+    Date.now() - AUTO_CLIENT_APPROVE_DAYS * DAY_MS,
+  );
 
-  const qs = await db.collection('contracts')
+  const qs = await db
+    .collection('contracts')
     .where('status', '==', 'submitted')
     .where('delivery.submittedAt', '<=', cutoff)
     .limit(100)
@@ -565,9 +565,12 @@ exports.autoApproveSubmitted = onSchedule('every 60 minutes', async () => {
  * deliveryApproved + freelancer didn't confirm X days => auto confirm freelancer + finalize payout
  */
 exports.autoPayoutAfterClientApprove = onSchedule('every 60 minutes', async () => {
-  const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - AUTO_FREELANCER_CONFIRM_DAYS * DAY_MS);
+  const cutoff = admin.firestore.Timestamp.fromMillis(
+    Date.now() - AUTO_FREELANCER_CONFIRM_DAYS * DAY_MS,
+  );
 
-  const qs = await db.collection('contracts')
+  const qs = await db
+    .collection('contracts')
     .where('status', '==', 'deliveryApproved')
     .where('approvals.clientApprovedAt', '<=', cutoff)
     .limit(100)
@@ -612,74 +615,77 @@ exports.autoPayoutAfterClientApprove = onSchedule('every 60 minutes', async () =
   await Promise.all(tasks);
 });
 
-exports.rejectDeliveryByConversation = onCall({ cors: true, invoker: 'public' }, async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'Login required');
+exports.rejectDeliveryByConversation = onCall(
+  { cors: true, invoker: 'public' },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Login required');
 
-  const { conversationId, reason } = request.data || {};
-  if (!conversationId) throw new HttpsError('invalid-argument', 'conversationId is required');
+    const { conversationId, reason } = request.data || {};
+    if (!conversationId) throw new HttpsError('invalid-argument', 'conversationId is required');
 
-  const reasonText = (typeof reason === 'string' && reason.trim())
-      ? reason.trim()
-      : 'Delivery rejected';
+    const reasonText =
+      typeof reason === 'string' && reason.trim() ? reason.trim() : 'Delivery rejected';
 
-  await db.runTransaction(async (tx) => {
-    const convRef = db.collection('conversations').doc(conversationId);
-    const convSnap = await tx.get(convRef);
-    if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
+    await db.runTransaction(async (tx) => {
+      const convRef = db.collection('conversations').doc(conversationId);
+      const convSnap = await tx.get(convRef);
+      if (!convSnap.exists) throw new HttpsError('not-found', 'Conversation not found');
 
-    const conv = convSnap.data() || {};
-    const contractId = conv.contractId;
-    if (!contractId) throw new HttpsError('failed-precondition', 'Conversation missing contractId');
+      const conv = convSnap.data() || {};
+      const contractId = conv.contractId;
+      if (!contractId)
+        throw new HttpsError('failed-precondition', 'Conversation missing contractId');
 
-    const contractRef = db.collection('contracts').doc(contractId);
-    const cSnap = await tx.get(contractRef);
-    if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
+      const contractRef = db.collection('contracts').doc(contractId);
+      const cSnap = await tx.get(contractRef);
+      if (!cSnap.exists) throw new HttpsError('not-found', 'Contract not found');
 
-    const c = cSnap.data() || {};
-    if (c.clientId !== uid) throw new HttpsError('permission-denied', 'Only client can reject delivery');
+      const c = cSnap.data() || {};
+      if (c.clientId !== uid)
+        throw new HttpsError('permission-denied', 'Only client can reject delivery');
 
-    if (c.status !== 'submitted') {
-      throw new HttpsError('failed-precondition', `Cannot reject now. status=${c.status}`);
-    }
+      if (c.status !== 'submitted') {
+        throw new HttpsError('failed-precondition', `Cannot reject now. status=${c.status}`);
+      }
 
-    // ✅ رجعها ل inProgress
-    tx.update(contractRef, {
-      status: 'inProgress',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      // ✅ رجعها ل inProgress
+      tx.update(contractRef, {
+        status: 'inProgress',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
 
-      // optional: سجل آخر رفض
-      lastRejection: {
-        reason: reasonText,
-        at: admin.firestore.FieldValue.serverTimestamp(),
-        by: uid,
-      },
+        // optional: سجل آخر رفض
+        lastRejection: {
+          reason: reasonText,
+          at: admin.firestore.FieldValue.serverTimestamp(),
+          by: uid,
+        },
+      });
+
+      // رسالة System بالشات
+      const msgRef = convRef.collection('messages').doc();
+      const text = '❌ Delivery rejected. Please resubmit.';
+
+      tx.set(msgRef, {
+        type: 'system',
+        senderId: uid,
+        text: text + '\nReason: ' + reasonText,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        meta: { action: 'rejectDelivery', reason: reasonText },
+      });
+
+      // تحديث آخر رسالة + unread
+      const participants = Array.isArray(conv.participants) ? conv.participants : [];
+      const otherUid = participants.find((p) => p !== uid) || null;
+      finalUnreadPatch(tx, convRef, conv, uid, otherUid, text + '\nReason: ' + reasonText);
     });
 
-    // رسالة System بالشات
-    const msgRef = convRef.collection('messages').doc();
-    const text = '❌ Delivery rejected. Please resubmit.';
-
-    tx.set(msgRef, {
-      type: 'system',
-      senderId: uid,
-      text: text+'\nReason: '+reasonText,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      meta: { action: 'rejectDelivery', reason: reasonText },
-    });
-
-    // تحديث آخر رسالة + unread
-    const participants = Array.isArray(conv.participants) ? conv.participants : [];
-    const otherUid = participants.find((p) => p !== uid) || null;
-    finalUnreadPatch(tx, convRef, conv, uid, otherUid, text+'\nReason: '+reasonText);
-  });
-
-  return { ok: true };
-});
-
+    return { ok: true };
+  },
+);
 
 function finalUnreadPatch(tx, convRef, conv, senderUid, otherUid, lastText) {
-  const unread = (conv.unread && typeof conv.unread === 'object') ? conv.unread : {};
+  const unread = conv.unread && typeof conv.unread === 'object' ? conv.unread : {};
   const otherUnread = otherUid ? Number(unread[otherUid] ?? 0) : 0;
 
   const patch = {
@@ -692,6 +698,3 @@ function finalUnreadPatch(tx, convRef, conv, senderUid, otherUid, lastText) {
 
   tx.set(convRef, patch, { merge: true });
 }
-
-
-

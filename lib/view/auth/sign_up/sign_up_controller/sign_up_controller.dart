@@ -14,6 +14,7 @@ class SignUpController extends GetxController {
 
   var companyName = ''.obs;
   var website = ''.obs;
+  var socialLinks = <String, String>{}.obs;
 
   var fullName = ''.obs;
   var mediaWorkTypes = <String>[].obs;
@@ -69,10 +70,14 @@ class SignUpController extends GetxController {
           'fullName': fullName.value.trim(),
           'mediaWorkTypes': mediaWorkTypes.toList(),
           'analystSpecialty': analystSpecialty.value.trim(),
+          'socialLinks': Map<String, dynamic>.from(socialLinks),
         });
       }
 
-      await _firestore.collection('users').doc(user.uid).set(userData);
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .set(userData, SetOptions(merge: true));
 
       // إضافة مباشرة إلى فريق Team
       Map<String, dynamic> teamData = {

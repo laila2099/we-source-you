@@ -7,7 +7,7 @@ class AppTheme {
   static ThemeData light(BuildContext context) {
     return ThemeData(
       brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.cream,
+      scaffoldBackgroundColor: AppColors.white,
       useMaterial3: true,
       textTheme: TextTheme(
         headlineLarge: AppTextStyles.h1(context),

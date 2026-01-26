@@ -243,7 +243,7 @@ class MediaView extends GetView<MediaController> {
                                 .getDownloadURL();
 
                             //  نحفظ مسار الملف (fileRef) بدل downloadUrl
-                            final fileRef = storageRef.fullPath;
+                            final fileRef = storageRef;
 
                             //  للمعاينة فقط  public/preview
                             final previewUrl = (selectedType == "photo")

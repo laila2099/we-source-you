@@ -6,7 +6,6 @@ import 'package:we_source_you/core/constant/text_style.dart';
 import 'package:we_source_you/core/constant/responsive_layout.dart';
 import 'package:we_source_you/view/auth/sign_up/sign_up_controller/sign_up_controller.dart';
 import 'package:we_source_you/view/auth/widgets/drop_down.dart';
-import 'package:we_source_you/view/auth/widgets/google_sign.dart';
 import 'package:we_source_you/widgets/custom_buttom/custom_buttom.dart';
 import 'package:we_source_you/widgets/custom_text_form/custom_text_form.dart';
 
@@ -68,43 +67,8 @@ class SignUpForm extends GetView<SignUpController> {
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10.h),
-            GoogleSignInButton(),
 
-            /// Continue with Google Button
-            // OutlinedButton.icon(
-            //   onPressed: () {},
-            //   icon: Text('G', style: AppTextStyles.bodyBold(context)),
-            //   label: Text(
-            //     'Continue with Google',
-            //     style: AppTextStyles.body(context),
-            //   ),
-            //   style: OutlinedButton.styleFrom(
-            //     minimumSize: Size(double.infinity, 50.h),
-            //     foregroundColor: Colors.black,
-            //     shape: RoundedRectangleBorder(
-            //       borderRadius: BorderRadius.circular(4.r),
-            //     ),
-            //   ),
-            // ),
             SizedBox(height: 25.h),
-
-            /// OR separator
-            Row(
-              children: <Widget>[
-                const Expanded(child: Divider(color: Colors.grey)),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w),
-                  child: Text(
-                    'or',
-                    style: AppTextStyles.body(
-                      context,
-                    ).copyWith(color: Colors.grey.shade600),
-                  ),
-                ),
-                const Expanded(child: Divider(color: Colors.grey)),
-              ],
-            ),
-            SizedBox(height: 30.h),
 
             /// ---------------- Account Type ----------------
             Text("Account Type", style: AppTextStyles.bodyBold(context)),
@@ -227,13 +191,12 @@ class SignUpForm extends GetView<SignUpController> {
                   ),
                   DropdownMenuItem(value: "Translator", child: Text("مترجم")),
                   DropdownMenuItem(value: "Analyst", child: Text("محلل")),
+                  DropdownMenuItem(
+                    value: "Web Designer",
+                    child: Text("مصمم ويب"),
+                  ),
                 ],
-                // onChanged: (value) {
-                //   controller.individualJob.value = value ?? '';
-                //   if (value != "Analyst") {
-                //     controller.analystSpecialty.value = '';
-                //   }
-                // },
+
                 onChanged: (value) {
                   controller.individualJob.value = value ?? '';
 
@@ -292,6 +255,25 @@ class SignUpForm extends GetView<SignUpController> {
               ],
 
               SizedBox(height: 20.h),
+              CustomTextField(
+                labelText: 'Facebook',
+                onChanged: (val) => controller.socialLinks['facebook'] = val,
+              ),
+              SizedBox(height: 10.h),
+              CustomTextField(
+                labelText: 'Instagram',
+                onChanged: (val) => controller.socialLinks['instagram'] = val,
+              ),
+              SizedBox(height: 10.h),
+              CustomTextField(
+                labelText: 'LinkedIn',
+                onChanged: (val) => controller.socialLinks['linkedin'] = val,
+              ),
+              SizedBox(height: 10.h),
+              CustomTextField(
+                labelText: 'Twitter',
+                onChanged: (val) => controller.socialLinks['twitter'] = val,
+              ),
 
               SizedBox(height: 20.h),
             ],

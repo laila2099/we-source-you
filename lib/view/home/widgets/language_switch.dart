@@ -7,12 +7,18 @@ class LanguageSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
+      // onSelected: (value) {
+      //   if (value == "ar") {
+      //     Get.updateLocale(const Locale("ar"));
+      //   } else {
+      //     Get.updateLocale(const Locale("en"));
+      //   }
+      // },
       onSelected: (value) {
-        if (value == "ar") {
-          Get.updateLocale(const Locale("ar"));
-        } else {
-          Get.updateLocale(const Locale("en"));
-        }
+        Locale locale = Locale(value);
+        Get.updateLocale(
+          locale,
+        ); // هذا السطر يخبر GetX بتغيير اللغة واتجاه الواجهة فوراً
       },
       itemBuilder: (context) => const [
         PopupMenuItem(value: "ar", child: Text("العربية")),
