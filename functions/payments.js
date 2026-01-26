@@ -1,15 +1,17 @@
 // functions/src/payments.js
-require('dotenv').config({ path: '.env.we-source-you' });
 
 const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
+const { defineSecret } = require('firebase-functions/params');
 const Stripe = require('stripe');
 const { applyPaymentSucceeded } = require('./payment_processor');
 
 const db = admin.firestore();
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+
+const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
+const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
+
 
 function assertString(v, name) {
   if (!v || typeof v !== 'string') {
@@ -18,12 +20,14 @@ function assertString(v, name) {
 }
 
 function getStripe() {
-  if (!STRIPE_SECRET_KEY) throw new Error('Missing STRIPE_SECRET_KEY');
-  return new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+  const key = STRIPE_SECRET_KEY.value();
+    assertString(key, 'STRIPE_SECRET_KEY');
+
+    return new Stripe(key, { apiVersion: '2024-06-20' });
 }
 
 exports.createPaymentIntent = onCall(
-  { cors: true, invoker: 'public' },
+  { cors: true, invoker: 'public' , secrets: [STRIPE_SECRET_KEY]  },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Login required');
@@ -113,7 +117,7 @@ exports.createPaymentIntent = onCall(
 );
 
 exports.createCheckoutSession = onCall(
-  { cors: true, invoker: 'public' },
+  { cors: true, invoker: 'public', secrets: [STRIPE_SECRET_KEY]},
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Login required');
@@ -214,12 +218,14 @@ exports.createCheckoutSession = onCall(
 
 // ✅ Webhook public + idempotent + موحد
 exports.webhooksStripeDev  = onRequest(
-{ cors: true, invoker: 'public' }
+{ cors: true, invoker: 'public', secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET] }
 ,
   async (req, res) => {
     const stripe = getStripe();
 
-    if (!STRIPE_WEBHOOK_SECRET) return res.status(500).send('Missing webhook secret');
+    const webhookSecret = STRIPE_WEBHOOK_SECRET.value();
+    if (!webhookSecret) return res.status(500).send('Missing webhook secret');
+
 
     let event;
     console.log('CT', req.headers['content-type']);
@@ -228,7 +234,7 @@ exports.webhooksStripeDev  = onRequest(
 
     try {
       const sig = req.headers['stripe-signature'];
-      event = stripe.webhooks.constructEvent(req.rawBody, sig, STRIPE_WEBHOOK_SECRET);
+      event = stripe.webhooks.constructEvent(req.rawBody, sig, webhookSecret);
     } catch (err) {
       console.error('Bad signature', err.message);
       return res.status(400).send('Bad signature');
