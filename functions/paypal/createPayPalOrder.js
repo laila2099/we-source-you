@@ -1,13 +1,24 @@
 // functions/src/createPayPalOrder.js
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
-const { BASE_URL, getAccessToken } = require('./paypalClient');
+const {
+  PAYPAL_BASE_URL_SECRET,
+  PAYPAL_CLIENT_ID_SECRET,
+  PAYPAL_CLIENT_SECRET_SECRET,
+  getBaseUrl,
+  getAccessToken,
+} = require('./paypalClient');
 
 const db = admin.firestore();
 
 exports.createPayPalOrder = onCall(
-  { cors: true, invoker: 'public' },
+  { cors: true, invoker: 'public' ,   secrets: [
+                                          PAYPAL_BASE_URL_SECRET,
+                                          PAYPAL_CLIENT_ID_SECRET,
+                                          PAYPAL_CLIENT_SECRET_SECRET,
+                                        ],},
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Login required');
@@ -62,7 +73,7 @@ exports.createPayPalOrder = onCall(
 
     const accessToken = await getAccessToken();
 
-    const res = await fetch(`${BASE_URL}/v2/checkout/orders`, {
+    const res = await fetch(`${getBaseUrl()}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -81,7 +92,14 @@ exports.createPayPalOrder = onCall(
       }),
     });
 
-    const order = await res.json();
+    const text = await res.text();
+    const order = (() => { try { return JSON.parse(text); } catch { return null; } })();
+
+    if (!res.ok || !order?.id) {
+      console.error('PayPal create order failed', { status: res.status, body: text });
+      throw new HttpsError('internal', 'PayPal create order failed');
+    }
+
     if (!order?.id) {
       console.error('PayPal create order failed', order);
       throw new HttpsError('internal', 'PayPal create order failed');

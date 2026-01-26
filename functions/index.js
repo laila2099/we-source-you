@@ -55,6 +55,7 @@ exports.sendPayout =
 exports.getPayoutSettings = require('./payouts').getPayoutSettings;
 exports.setDefaultPayoutProvider = require('./payouts').setDefaultPayoutProvider;
 exports.autoSendPayoutOnQueuedCreated = require('./payouts').autoSendPayoutOnQueuedCreated;
+exports.autoRetryPayoutOnFailedUpdated = require('./payouts').autoRetryPayoutOnFailedUpdated;
 
 
 

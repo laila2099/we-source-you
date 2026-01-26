@@ -1,8 +1,10 @@
-require('dotenv').config({ path: '.env.we-source-you' });
-
+const { defineSecret } = require('firebase-functions/params');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const db = admin.firestore();
+
+const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
+const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 
 function requireAuth(request) {
   const uid = request.auth?.uid;
@@ -49,12 +51,13 @@ exports.setPayoutProfilePayPal = onCall({ cors: true, invoker: 'public' }, async
 const Stripe = require('stripe');
 
 function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error('Missing STRIPE_SECRET_KEY');
-  return new Stripe(key, { apiVersion: '2024-06-20' });
+  const key = STRIPE_SECRET_KEY.value();
+    assertString(key, 'STRIPE_SECRET_KEY');
+
+    return new Stripe(key, { apiVersion: '2024-06-20' });
 }
 
-exports.createStripeAccountLink = onCall({ cors: true, invoker: 'public' }, async (request) => {
+exports.createStripeAccountLink = onCall({ cors: true, invoker: 'public'  , secrets: [STRIPE_SECRET_KEY]}, async (request) => {
   const uid = requireAuth(request);
   const { returnUrl, refreshUrl } = request.data || {};
   assertString(returnUrl, 'returnUrl');

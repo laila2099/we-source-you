@@ -2,12 +2,22 @@
 const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
-const { BASE_URL, getAccessToken } = require('./paypalClient');
+const {
+  PAYPAL_BASE_URL_SECRET,
+  PAYPAL_CLIENT_ID_SECRET,
+  PAYPAL_CLIENT_SECRET_SECRET,
+  getBaseUrl,
+  getAccessToken,
+} = require('./paypalClient');
 const { applyPaymentSucceeded } = require('../payment_processor');
 
 const db = admin.firestore();
 
-exports.webhooksPaypalDev = onRequest({ cors: true, invoker: 'public' }, async (req, res) => {
+exports.webhooksPaypalDev = onRequest({ cors: true, invoker: 'public' , secrets: [
+                                                                                                                PAYPAL_BASE_URL_SECRET,
+                                                                                                                PAYPAL_CLIENT_ID_SECRET,
+                                                                                                                PAYPAL_CLIENT_SECRET_SECRET,
+                                                                                                              ],}, async (req, res) => {
   let event;
   try {
     event = typeof req.body === 'object'
@@ -42,7 +52,7 @@ exports.webhooksPaypalDev = onRequest({ cors: true, invoker: 'public' }, async (
   try {
     const accessToken = await getAccessToken();
 
-    const capRes = await fetch(`${BASE_URL}/v2/checkout/orders/${orderId}/capture`, {
+    const capRes = await fetch(`${getBaseUrl()}/v2/checkout/orders/${orderId}/capture`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
