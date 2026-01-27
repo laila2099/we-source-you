@@ -64,8 +64,6 @@ async function getPayPalAccessToken() {
 }
 
 function toSenderItemId(payoutId) {
-    // PayPal max 63 chars
-    // خليها قصيرة: "p_" + payoutId (قص)
     return (`p_${payoutId}`).slice(0, 63);
   }
 
@@ -176,6 +174,18 @@ exports.sendPayout = onCall({ cors: true, invoker: 'public', secrets: [PAYPAL_BA
       processingAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+
+    // 🔒 اقفلي العقد فورًا لحتى ينشال زر Send payout
+    if (p.contractId) {
+      const contractRef = db.collection('contracts').doc(p.contractId);
+
+      tx.update(contractRef, {
+        status: 'payoutProcessing',
+        payoutProcessingAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
 
     return { already: false, payout: p };
   });
@@ -329,6 +339,17 @@ exports.sendPayout = onCall({ cors: true, invoker: 'public', secrets: [PAYPAL_BA
       },
       { merge: true }
     );
+
+  if (contractRef) {
+      await contractRef.set(
+        {
+          status: 'payoutQueued',
+          payoutRetryAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
 
     throw new HttpsError('internal', 'sendPayout failed');
   }

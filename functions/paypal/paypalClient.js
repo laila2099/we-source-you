@@ -16,9 +16,7 @@ function getBaseUrl() {
   const mode = PAYPAL_BASE_URL_SECRET.value(); // 'sandbox' or 'live'
   assertString(mode, 'PAYPAL_BASE_URL_SECRET');
 
-  return mode === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com';
+  return mode;
 }
 
 async function getAccessToken() {
